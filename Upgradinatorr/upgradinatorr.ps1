@@ -87,8 +87,9 @@ try {
     $randomMovies = Get-Random -InputObject $movies -Count $count
 
     foreach ($movie in $randomMovies){
-        Invoke-RestMethod -Uri "$uri/api/v3/movie/editor" -Method Put -Headers $putTagHeaders -ContentType "application/json" -Body "{`"movieIds`":[$($movie.ID)],`"tags`":[20],`"applyTags`":`"add`"}"
-        Invoke-RestMethod -Uri "$($uri)/api/v3/command" -Method "POST" -Headers $commandMovieHeaders -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}"
+        $AddTag = Invoke-RestMethod -Uri "$uri/api/v3/movie/editor" -Method Put -Headers $putTagHeaders -ContentType "application/json" -Body "{`"movieIds`":[$($movie.ID)],`"tags`":[20],`"applyTags`":`"add`"}"
+        $MovieSearch = Invoke-RestMethod -Uri "$($uri)/api/v3/command" -Method "POST" -Headers $commandMovieHeaders -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}"
+        Write-Host "Manual search kicked off for the following movie" $Movie.title
     }
 
 }
