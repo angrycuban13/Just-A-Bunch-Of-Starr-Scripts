@@ -7,93 +7,82 @@ https://radarr.video/docs/api/#/
 
 #>
 
-
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess)]
 param (
     [Parameter(Mandatory)]
     [string]
     $apiKey,
     [Parameter(Mandatory)]
     [string]
+    [ValidateScript({
+        if ($_.StartsWith('http://') -and -Not $_.EndsWith("/")){
+            return $true
+        }
+        elseif ($_.EndsWith("/")){
+            throw "Url should not end with /"
+        }
+        else{
+            throw "Your Url did not start with http://"
+        }
+    })]
     $uri,
     [Parameter(Mandatory)]
-    [string]
+    [ValidateRange("Positive")]
+    [Int]
     $tagId,
     [Parameter(Mandatory)]
-    [string]
-    $count
-
+    [ValidateRange("Positive")]
+    [Int]
+    $count,
+    [Parameter()]
+    [Bool]
+    $monitored = $true
 )
 
-Write-Host "Checking that Radarr is accessible" -ForegroundColor Yellow
-$webRequestGetHeaders = @{
-    "method"="GET"
-    "path"="/api/v3/system/status"
-    "x-api-key"= $apiKey
-}
-$webRequest = Invoke-WebRequest -UseBasicParsing -Uri $uri -Header $webRequestGetHeaders
-
-if ($webRequest.StatusCode -eq 200){
-    Write-Host "Success!" -ForegroundColor "Green"
+$webHeaders = @{
+    "x-api-key" = $apiKey
 }
 
-else {
-    Write-Host "Radarr does not seem to be accessible, it responded with status code" $webRequest.StatusCode -ForegroundColor Red
-    Exit 1
+Invoke-RestMethod -Uri $uri/api/v3/system/status -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
+
+if ($apiStatusCode -notmatch "2\d\d"){
+    throw "Radarr returned $apiStatusCode"
 }
 
-Write-Host "Checking that the tag ID provided exists in Radarr" -ForegroundColor Yellow
+$tagList = Invoke-RestMethod  -Uri "$($uri)/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
 
-try {
-    $tagGetHeaders = @{
-        "method"="GET"
-        "path"="/api/v3/tag"
-        "x-api-key"= $apiKey
-    }
-    $tagList = Invoke-RestMethod  -Uri "$($uri)/api/v3/tag" -Method Get -Headers $tagGetHeaders
-    if ($tagList.id -contains $tagId){
-        Write-Host "Tag ID exists in Radarr" -ForegroundColor Green
-    }
-
-    else {
-        Write-Host "Tag ID" $tagid "does not exist in Radarr. Below is a list of all existing tags in Radarr" -ForegroundColor Red
-        $taglist | Sort-Object id
-    }
-}
-catch {
-    Write-Host $_ -ForegroundColor Red
-    Exit 1
+if ($apiStatusCode -notmatch "2\d\d"){
+    throw "Failed to get tag list"
 }
 
-try {
-    $getMovieHeaders = @{
-        "method"="GET"
-        "path"="/api/v3/movie"
-        "x-api-key"= $apiKey
-    }
-    $commandMovieHeaders = @{
-        "method"="POST"
-        "path"="/api/v3/command"
-        "x-api-key"= $apiKey
-    }
-    $putTagHeaders = @{
-        "method"="PUT"
-        "path"="/api/v3/movie/editor"
-        "x-api-key"= $apiKey
-    }
-
-    $allMovies = Invoke-RestMethod -Uri "$uri/api/v3/movie" -Headers $getMovieHeaders
-    $movies = $AllMovies | Where-Object {$_.tags -notcontains $tagNumber}
-    $randomMovies = Get-Random -InputObject $movies -Count $count
-
-    foreach ($movie in $randomMovies){
-        $AddTag = Invoke-RestMethod -Uri "$uri/api/v3/movie/editor" -Method Put -Headers $putTagHeaders -ContentType "application/json" -Body "{`"movieIds`":[$($movie.ID)],`"tags`":[$($tagId)],`"applyTags`":`"add`"}"
-        $MovieSearch = Invoke-RestMethod -Uri "$($uri)/api/v3/command" -Method "POST" -Headers $commandMovieHeaders -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}"
-        Write-Host "Manual search kicked off for" $Movie.title
-    }
-
+if ($tagList.id -notcontains $tagId){
+    Write-Host "Tag ID $tagId does not exist in Radarr. Below is a list of all existing tags in Radarr:" -ForegroundColor Red
+    $taglist | Sort-Object id
 }
-catch {
-    Write-Host $_ -ForegroundColor Red
-    Exit 1
+
+$allMovies = Invoke-RestMethod -Uri "$uri/api/v3/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+
+if ($apiStatusCode -notmatch "2\d\d"){
+    throw "Failed to get movie list"
+}
+
+$movies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $monitored }
+$randomMovies = Get-Random -InputObject $movies -Count $count
+$movieCounter = 0
+
+foreach ($movie in $randomMovies) {
+    $movieCounter++
+    Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $count) * 100)
+    if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")){
+        $addTag = Invoke-RestMethod -Uri "$uri/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movie.ID)],`"tags`":[$tagId],`"applyTags`":`"add`"}"
+
+        if ($apiStatusCode -notmatch "2\d\d"){
+            throw "Failed to add tag to $($movie.title) with statuscode $apiStatusCode\n content: $addTag" }
+
+        $searchMovies = Invoke-RestMethod -Uri "$($uri)/api/v3/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}"
+
+        if ($apiStatusCode -notmatch "2\d\d"){
+            throw "Failed to search for $($movie.title) with statuscode $apiStatusCode\n content: $searchMovies" }
+        Write-Host "Manual search kicked off for" $movie.title
+    }
 }
