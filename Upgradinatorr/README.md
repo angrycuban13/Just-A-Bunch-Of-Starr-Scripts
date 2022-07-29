@@ -7,7 +7,7 @@ To install Powershell 7, follow [this link](https://docs.microsoft.com/en-us/pow
 ## Parameter List
 
 * apiKey = Grab this from `Radarr > Settings > General > Security`
-* uri = Radarr URL starting with `http://` and not ending with `/`
+* uri = Radarr URL starting with `http(s)://` and not ending with `/`
 * tagName = An **existing** tag in Radarr you wish to tag movies with
 * count = Number of movies you wish to manually search for. Be aware of your indexer limits, I'm not responsible if you get banned for hammering their API.
 * monitored = Defaults to `$true`. Accepts `$true` or `$false`.
