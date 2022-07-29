@@ -41,6 +41,10 @@ param (
     $monitored = $true
 )
 
+if ($host.Version -notlike "7.*"){
+    throw "You need Powershell 7 to run this script"
+}
+
 $webHeaders = @{
     "x-api-key" = $apiKey
 }
@@ -79,12 +83,14 @@ foreach ($movie in $randomMovies) {
         $addTag = Invoke-RestMethod -Uri "$uri/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movie.ID)],`"tags`":[$tagId],`"applyTags`":`"add`"}"
 
         if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Failed to add tag to $($movie.title) with statuscode $apiStatusCode\n content: $addTag" }
+            throw "Failed to add tag to $($movie.title) with statuscode $apiStatusCode\n content: $addTag"
+        }
 
         $searchMovies = Invoke-RestMethod -Uri "$($uri)/api/v3/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}"
 
         if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Failed to search for $($movie.title) with statuscode $apiStatusCode\n content: $searchMovies" }
+            throw "Failed to search for $($movie.title) with statuscode $apiStatusCode\n content: $searchMovies"
+        }
         Write-Host "Manual search kicked off for" $movie.title
     }
 }
