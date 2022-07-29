@@ -17,21 +17,20 @@ param (
     [Parameter(Mandatory)]
     [string]
     [ValidateScript({
-        if ($_.StartsWith('http://') -and -Not $_.EndsWith("/")){
+        if ($_ -match "https?:\/\/" -and -Not $_.EndsWith("/")){
             return $true
         }
         elseif ($_.EndsWith("/")){
             throw "Url should not end with /"
         }
         else{
-            throw "Your Url did not start with http://"
+            throw "Your Url did not start with http(s)://"
         }
     })]
     $uri,
     [Parameter(Mandatory)]
-    [ValidateRange("Positive")]
-    [Int]
-    $tagId,
+    [string]
+    $tagName,
     [Parameter(Mandatory)]
     [ValidateRange("Positive")]
     [Int]
@@ -41,7 +40,7 @@ param (
     $monitored = $true
 )
 
-if ($host.Version -notlike "7.*"){
+if ($PSVersionTable.PSVersion -notlike "7.*"){
     throw "You need Powershell 7 to run this script"
 }
 
@@ -56,13 +55,14 @@ if ($apiStatusCode -notmatch "2\d\d"){
 }
 
 $tagList = Invoke-RestMethod  -Uri "$($uri)/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+$tagId = $taglist | Where-Object {$_.label -contains $tagname} | Select-Object -ExpandProperty id
 
 if ($apiStatusCode -notmatch "2\d\d"){
     throw "Failed to get tag list"
 }
 
-if ($tagList.id -notcontains $tagId){
-    Write-Host "Tag ID $tagId does not exist in Radarr. Below is a list of all existing tags in Radarr:" -ForegroundColor Red
+if ($tagList.label -notcontains $tagName){
+    Write-Host "Tag ID $tagName does not exist in Radarr. Below is a list of all existing tags in Radarr:" -ForegroundColor Red
     $taglist | Sort-Object id
 }
 
