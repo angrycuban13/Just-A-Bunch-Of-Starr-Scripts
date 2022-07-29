@@ -10,7 +10,7 @@ To install Powershell 7, follow [this link](https://docs.microsoft.com/en-us/pow
 * uri = Radarr URL starting with `http://` and not ending with `/`
 * tagName = An **existing** tag in Radarr you wish to tag movies with
 * count = Number of movies you wish to manually search for. Be aware of your indexer limits, I'm not responsible if you get banned for hammering their API.
-*monitored = Defaults to `$true`. Accepts `$true` or `$false`.
+* monitored = Defaults to `$true`. Accepts `$true` or `$false`.
 * moviestatus = Defaults to `released` so you aren't searching for movies that are `missing`
 
 ## `upgradinatorr.ps1`examples
