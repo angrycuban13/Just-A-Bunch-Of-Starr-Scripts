@@ -37,7 +37,10 @@ param (
     $count,
     [Parameter()]
     [Bool]
-    $monitored = $true
+    $monitored = $true,
+    [Parameter()]
+    [String]
+    $movieStatus = "released"
 )
 
 if ($PSVersionTable.PSVersion -notlike "7.*"){
@@ -72,7 +75,7 @@ if ($apiStatusCode -notmatch "2\d\d"){
     throw "Failed to get movie list"
 }
 
-$movies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $monitored }
+$movies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $monitored -and $_.status -eq $movieStatus }
 $randomMovies = Get-Random -InputObject $movies -Count $count
 $movieCounter = 0
 
