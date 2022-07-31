@@ -19,15 +19,15 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 
 ### General
 
-`count`: Defaults to 10. Number of items to be searched
-`monitored`: Defaults to `$true`. Set to `$false` to only search unmonitored items
+* `count`: Defaults to 10. Number of items to be searched
+* `monitored`: Defaults to `$true`. Set to `$false` to only search unmonitored items
 
 ### Radarr
 
-`movieStatus`: Defaults to `released`. Accepts any of the movie status options available in Radarr API.
-`radarrApiKey`: Your Radarr API key.
-`radarrTagName`: Tag you wish to use to tag movies that have already been searched.
-`radarrUrl`: Radarr URL starting with `http(s)://` and **not** ending in `/`
+* `movieStatus`: Defaults to `released`. Accepts any of the movie status options available in Radarr API.
+* `radarrApiKey`: Your Radarr API key.
+* `radarrTagName`: Tag you wish to use to tag movies that have already been searched.
+* `radarrUrl`: Radarr URL starting with `http(s)://` and **not** ending in `/`
 
 ## How To Use
 
