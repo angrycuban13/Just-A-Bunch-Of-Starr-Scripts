@@ -14,7 +14,11 @@ param (
     # Define app
     [Parameter()]
     [string[]]
-    $apps
+    $apps,
+    # Reset and remove tags
+    [Parameter()]
+    [bool]
+    $reset
 )
 
 if ($PSVersionTable.PSVersion -notlike "7.*") {
