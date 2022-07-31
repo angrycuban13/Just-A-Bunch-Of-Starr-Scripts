@@ -103,7 +103,10 @@ foreach ($app in $apps){
 
         $movies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $config.General.monitored -and $_.status -eq $config.Radarr.movieStatus }
 
-        if ($movies.Count -eq 0){
+        if ($movies.Count -eq 0 -and $reset){
+            throw "No movies left to search"
+        }
+        elseif ($movies.Count -eq 0){
             throw "No movies left to search"
         }
 
