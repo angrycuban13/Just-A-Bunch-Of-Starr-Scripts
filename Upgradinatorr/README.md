@@ -1,24 +1,46 @@
 # README
 
-This script requires you to have Powershell 7, otherwise it will fail.
+Script to manually search *n* items that are not tagged with a specific tag in your - Radarr only for now -  media library. *n* is the number of items this script will search for, this has the added benefit that you don't hammer your indexers and get banned :)
 
-To install Powershell 7, follow [this link](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.2)
+## Requirements
 
-## Parameter List
+* Powershell 7: To install Powershell 7, follow [this link](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.2)
+* `Upgrade Until Custom Format Score` set to at least `10000`
+  * Radarr > Settings > Profiles > Quality Profile > Upgrade Until Custom Format Score
+* *Optional*: Using [TRaSH guides](https://trash-guides.info/)
 
-* apiKey = Grab this from `Radarr > Settings > General > Security`
-* uri = Radarr URL starting with `http(s)://` and not ending with `/`
-* tagName = An **existing** tag in Radarr you wish to tag movies with
-* count = Number of movies you wish to manually search for. Be aware of your indexer limits, I'm not responsible if you get banned for hammering their API.
-* monitored = Defaults to `$true`. Accepts `$true` or `$false`.
-* moviestatus = Defaults to `released` so you aren't searching for movies that are `missing`
+## Why should I use this script?
 
-## `upgradinatorr.ps1`examples
+* Let's say you recently started using TRaSH guides. Now you are wondering if the releases Radarr has grabbed in the past are the highest scored releases per the Custom Format scoring and you have 1000+ movies. Manually searching and keeping track of what was searched is tedious and boring. This script helps with that!
 
-### Search for *n* movies
+## Config File Parameters
 
-    upgradinator.ps1 -apikey "my_api_key" -uri "http://my_radarr_url" -tagname "my_tag_name" -count 1
+* **No quotation marks**
 
-### Schedule it to run
+### General
 
-    0 */6 * * *    pwsh /opt/scripts/upgradinatorr/upgradinatorr.ps1 -apikey "my_api_key" -uri "http://my_radarr_url" -tagname "my_tag_name" -count 1
+* `count`: Defaults to 10. Number of items to be searched
+* `monitored`: Defaults to `$true`. Set to `$false` to only search unmonitored items
+
+### Radarr
+
+* `movieStatus`: Defaults to `released`. Accepts any of the movie status options available in Radarr API.
+* `radarrApiKey`: Your Radarr API key.
+* `radarrTagName`: Tag you wish to use to tag movies that have already been searched.
+* `radarrUrl`: Radarr URL starting with `http(s)://` and **not** ending in `/`
+
+## How To Use
+
+* Clone repo
+* Fill in parameters in `upgradinatorr.conf`
+* Run script
+
+## `upgradinatorr.ps1` usage
+
+### One Time
+
+    upgradinator.ps1 -apps radarr
+
+### Scheduled
+
+    0 */6 * * *    pwsh /path/to/repo/clone/location/upgradinatorr/upgradinatorr.ps1 -apps radarr
