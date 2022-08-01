@@ -63,7 +63,7 @@ else {
 foreach ($app in $apps){
     if ($app -eq "radarr"){
 
-        #Validate Radarr URL
+        # Validate Radarr URL
         if ($config.Radarr.radarrUrl -match "https?:\/\/" -and -Not $config.Radarr.radarrUrl.EndsWith("/")){
             Write-Verbose "URL formatted correctly, continuing"
         }
@@ -72,44 +72,72 @@ foreach ($app in $apps){
         }
         else{
             throw "Your Radarr URL did not start with http:// or https://"
-        }
+        } # Radarr URL Validated
 
         $webHeaders = @{
             "x-api-key" = $config.Radarr.radarrApiKey
         }
 
+        # Query Radarr status via API
         Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
 
         if ($apiStatusCode -notmatch "2\d\d"){
             throw "Radarr returned $apiStatusCode"
         }
 
+        # Retrieve all tags in Radarr via API
         $tagList = Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
-        $tagId = $taglist | Where-Object {$_.label -contains $config.Radarr.radarrTagName} | Select-Object -ExpandProperty id
 
         if ($apiStatusCode -notmatch "2\d\d"){
             throw "Failed to get tag list"
         }
 
+        # Validate tag name exists
         if ($tagList.label -notcontains $config.Radarr.radarrTagName){
             throw "$($config.Radarr.radarrTagName) doesn't exist in Radarr"
         }
 
+        # Obtain tag id based off provided tag name
+        $tagId = $taglist | Where-Object {$_.label -contains $config.Radarr.radarrTagName} | Select-Object -ExpandProperty id
+
+        # Retrieve all movies via API
         $allMovies = Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
 
         if ($apiStatusCode -notmatch "2\d\d"){
             throw "Failed to get movie list"
         }
 
+        # Filter movies that don't contain $tagId but match $monitored and $movieStatus.
         $movies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $config.General.monitored -and $_.status -eq $config.Radarr.movieStatus }
 
-        if ($movies.Count -eq 0 -and $reset){
-            throw "No movies left to search"
+        # If $reset set to true, remove tag from movies
+        if ($reset){
+
+            # Filter movies that match $tagId, $monitored and $movieStatus.
+            $movies = $allMovies | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $config.General.monitored -and $_.status -eq $config.Radarr.movieStatus }
+
+            $movieCounter = 0
+
+            foreach ($movie in $movies) {
+                $movieCounter++
+                Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $movies.Count) * 100)
+                if ($PSCmdlet.ShouldProcess($movie.title, "Removing tags")){
+                    $removeTag = Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movie.ID)],`"tags`":[$tagId],`"applyTags`":`"remove`"}"
+
+                    if ($apiStatusCode -notmatch "2\d\d"){
+                        throw "Failed to remove tag from $($movie.title) with statuscode $apiStatusCode\n content: $removeTag"
+                    }
+                }
+                Write-Host "Removed tag from" $movie.title
+            }
         }
+
+        # Exit if there are no more movies available to search
         elseif ($movies.Count -eq 0){
             throw "No movies left to search"
         }
 
+        # Start movie search
         else {
             $randomMovies = Get-Random -InputObject $movies -Count $config.General.count
             $movieCounter = 0
@@ -132,12 +160,11 @@ foreach ($app in $apps){
                     Write-Host "Manual search kicked off for" $movie.title
                 }
             }
-        }#>
+        }
     }
 
     if  ($app -eq "sonarr"){
-        Write-Host "lol"
-        #throw "You are getting ahead of yourself..."
+        throw "You are getting ahead of yourself..."
     }
 
     if ($app -eq "lidarr"){
@@ -145,8 +172,7 @@ foreach ($app in $apps){
     }
 
     if ($app -eq "whisparr"){
-        Write-Host "naughty"
-        #throw "naughty boy"
+        throw "Naughty boy"
     }
 
     elseif ($app -eq "prowlarr"){
