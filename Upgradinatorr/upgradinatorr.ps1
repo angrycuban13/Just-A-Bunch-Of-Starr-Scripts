@@ -2,16 +2,19 @@
 .SYNOPSIS
 This script will kick off manual search on a random number of movies in Radarr and add a specific tag to those movies so they aren't searched again
 
-Thanks @Roxedus for the cleanup and general pointers
+I'd like to credit @Roxedus and @austinwbest for their guidance and help making this script possible.
 
 .LINK
 https://radarr.video/docs/api/#/
+
+.LINK
+https://stackoverflow.com/questions/417798/ini-file-parsing-in-powershell
 
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
 param (
-    # Define app
+    # Define apps
     [Parameter()]
     [string[]]
     $apps
@@ -21,107 +24,81 @@ if ($PSVersionTable.PSVersion -notlike "7.*") {
     throw "You need Powershell 7 to run this script"
 }
 
+# Import functions
+Import-Module $PSScriptRoot\Upgradinatorr.psm1 -Force
+
 # Specify location of config file.
 $configFile = Join-Path -Path $PSScriptRoot -ChildPath upgradinatorr.conf
+Write-Verbose "Location for config file is $configFile"
 
 #Read the parameters from the config file.
 if (Test-Path  $configFile -PathType Leaf){
-    Function Parse-IniFile ($file) {
-        $ini = @{}
 
-        # Create a default section if none exist in the file. Like a java prop file.
-        $section = "NO_SECTION"
-        $ini[$section] = @{}
+    Write-Verbose "Parsing config file"
+    $config = Read-IniFile -File $configFile
 
-        switch -regex -file $file {
-            "^\[(.+)\]$" {
-                $section = $matches[1].Trim()
-                $ini[$section] = @{}
-            }
-            "^\s*([^#].+?)\s*=\s*(.*)" {
-                $name,$value = $matches[1..2]
-            # skip comments that start with semicolon:
-            if (!($name.StartsWith(";"))) {
-                $ini[$section][$name] = $value.Trim()
-            }
-        }
-    }
-        $ini
-    }
-
-    $config = Parse-IniFile -File $configFile
+    #Create global variable so it can be used by the functions
+    $global:config=$config
 }
 
 else {
     throw "Could not find config file"
 }
 
+Write-Verbose "Config file parsed successfully"
+
+
 foreach ($app in $apps){
+
+    $webHeaders = @{
+        "x-api-key" = $config.$($app)."$($app)ApiKey"
+    }
+
+    #Create global variables so they can be used by the functions
+    $Global:app = $app
+    $Global:webHeaders = $webHeaders
+
     if ($app -eq "radarr"){
 
-        #Validate Radarr URL
-        if ($config.Radarr.radarrUrl -match "https?:\/\/" -and -Not $config.Radarr.radarrUrl.EndsWith("/")){
-            Write-Verbose "URL formatted correctly, continuing"
-        }
-        elseif ($config.Radarr.radarrUrl.EndsWith("/")){
-            throw "Radarr URL should not end with /"
-        }
-        else{
-            throw "Your Radarr URL did not start with http:// or https://"
-        }
+        Write-Verbose "Confirming URL for $app"
+        Confirm-AppURL -app $app
 
-        $webHeaders = @{
-            "x-api-key" = $config.Radarr.radarrApiKey
-        }
+        Write-Verbose "Confirming connectivity for $app"
+        Confirm-AppConnectivity -app $app
 
-        Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
+        #Create global variable so it can be used by the functions
+        $global:tagId = Get-TagId -app $app
 
-        if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Radarr returned $apiStatusCode"
-        }
+        Write-Verbose "Tag ID $tagID confirmed for $app"
 
-        $tagList = Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
-        $tagId = $taglist | Where-Object {$_.label -contains $config.Radarr.radarrTagName} | Select-Object -ExpandProperty id
-
-        if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Failed to get tag list"
-        }
-
-        if ($tagList.label -notcontains $config.Radarr.radarrTagName){
-            throw "$($config.Radarr.radarrTagName) doesn't exist in Radarr"
-        }
-
-        $allMovies = Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+        $allMovies = Invoke-RestMethod -Uri "$($config.($app)."$($app)Url")/api/v3/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+        Write-Verbose "Retrieved a total of $($allmovies.Count) movies"
 
         if ($apiStatusCode -notmatch "2\d\d"){
             throw "Failed to get movie list"
         }
 
-        $movies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $config.General.monitored -and $_.status -eq $config.Radarr.movieStatus }
+        $filteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $config.General.monitored -and $_.status -eq $config.Radarr.movieStatus }
+        Write-Verbose "Filtered movies to a total of $($filteredMovies.count) movies"
 
-        if ($movies.Count -eq 0){
+        if ($filteredMovies.Count -eq 0){
             throw "No movies left to search"
         }
 
         else {
-            $randomMovies = Get-Random -InputObject $movies -Count $config.General.count
+            $randomMovies = Get-Random -InputObject $filteredMovies -Count $config.Radarr.radarrCount
             $movieCounter = 0
 
             foreach ($movie in $randomMovies) {
+
                 $movieCounter++
-                Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $config.General.count) * 100)
+                $global:movie = $movie
+                Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $config.Radarr.radarrCount) * 100)
+
                 if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")){
-                    $addTag = Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movie.ID)],`"tags`":[$tagId],`"applyTags`":`"add`"}"
-
-                    if ($apiStatusCode -notmatch "2\d\d"){
-                        throw "Failed to add tag to $($movie.title) with statuscode $apiStatusCode\n content: $addTag"
-                    }
-
-                    $searchMovies = Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}"
-
-                    if ($apiStatusCode -notmatch "2\d\d"){
-                        throw "Failed to search for $($movie.title) with statuscode $apiStatusCode\n content: $searchMovies"
-                    }
+                    Write-Verbose "Adding tag ID $tagID to $($movie.title)"
+                    Add-Tag -app $app -movie $movie
+                    Search-Movies -app $app -movie $movies
                     Write-Host "Manual search kicked off for" $movie.title
                 }
             }
@@ -129,21 +106,19 @@ foreach ($app in $apps){
     }
 
     if  ($app -eq "sonarr"){
-        Write-Host "lol"
-        #throw "You are getting ahead of yourself..."
+        throw "Sonarr does not support Custom Formats at this time"
     }
 
     if ($app -eq "lidarr"){
-        throw "Definitely not doing Lidarr, sorry"
+        throw "Lidarr is not yet configured - and it will probably never be"
     }
 
     if ($app -eq "whisparr"){
-        Write-Host "naughty"
-        #throw "naughty boy"
+        throw "Whisparr is not yet configured"
     }
 
     elseif ($app -eq "prowlarr"){
-        throw "Is your name Orange?"
+        throw "Really?"
     }
 
 }
