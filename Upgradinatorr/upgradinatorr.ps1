@@ -25,7 +25,7 @@ if ($PSVersionTable.PSVersion -notlike "7.*") {
 }
 
 # Import functions
-Import-Module $PSScriptRoot\Upgradinatorr.psm1 -Force
+Import-Module $PSScriptRoot\upgradinatorr.psm1 -Force
 
 # Specify location of config file.
 $configFile = Join-Path -Path $PSScriptRoot -ChildPath upgradinatorr.conf
