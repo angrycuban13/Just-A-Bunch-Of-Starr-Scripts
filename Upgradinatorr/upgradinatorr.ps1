@@ -98,7 +98,7 @@ foreach ($app in $apps){
                 if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")){
                     Write-Verbose "Adding tag ID $tagID to $($movie.title)"
                     Add-Tag -app $app -movie $movie
-                    Search-Movies -app $app -movie $movies
+                    Search-Movies -app $app -movie $movie
                     Write-Host "Manual search kicked off for" $movie.title
                 }
             }
