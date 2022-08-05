@@ -39,7 +39,7 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 
 ### One Time
 
-    upgradinator.ps1 -apps radarr
+    upgradinatorr.ps1 -apps radarr
 
 ### Scheduled
 
