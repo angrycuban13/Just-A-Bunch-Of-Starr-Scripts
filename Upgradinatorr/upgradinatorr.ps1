@@ -86,6 +86,13 @@ foreach ($app in $apps){
         }
 
         else {
+            if ($config.Radarr.radarrCount -eq "max"){
+                $config.Radarr.radarrCount = $filteredMovies.count
+                Write-Verbose "We will now search a total of $($config.Radarr.radarrCount) movies"
+            }
+            else {
+                Write-Verbose "We will now search $($config.Radarr.radarrCount) movies"
+            }
             $randomMovies = Get-Random -InputObject $filteredMovies -Count $config.Radarr.radarrCount
             $movieCounter = 0
 
@@ -102,7 +109,7 @@ foreach ($app in $apps){
                     Write-Host "Manual search kicked off for" $movie.title
                 }
             }
-        }#>
+        }
     }
 
     if  ($app -eq "sonarr"){
