@@ -26,21 +26,12 @@ foreach ($releaseGroup in $releaseGroups){
         $createTag = Invoke-RestMethod -Uri "$($radarrUrl)/api/v3/tag" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -Body $Body -ContentType "application/json"
 
         $allExistingTags = Invoke-RestMethod -Uri "$($radarrUrl)/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
-
-        $tag = $allExistingTags| Where-Object {$_.label -eq $releaseGroup}
     }
+}
 
-    else {
-        $tag = $allExistingTags| Where-Object {$_.label -contains $releaseGroup}
-    }
+foreach ($tag in $allExistingTags){
+    $movies = $allmovies | Where-Object {$_.moviefile.releasegroup -contains $tag.label}
 
-    foreach ($movie in $allMovies){
-        $movieFile = Invoke-RestMethod -Uri "$($radarrUrl)/api/v3/movieFile?movieid=$($movie.id)" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+    $setTag = Invoke-RestMethod -Uri "$($radarrUrl)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.ID -join ",")],`"tags`":[$($tag.id)],`"applyTags`":`"add`"}"
 
-        if ($movieFile.releasegroup -eq $releasegroup){
-            Invoke-RestMethod -Uri "$($radarrUrl)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movie.ID)],`"tags`":[$($tag.id)],`"applyTags`":`"add`"}" | Out-Null
-
-            Write-Host "Tagging $($movie.title) ($($movie.year)) with $($tag.label)"
-        }
-    }
 }
