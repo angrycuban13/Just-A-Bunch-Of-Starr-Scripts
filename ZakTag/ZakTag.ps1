@@ -2,6 +2,10 @@ $radarrApiKey = ""
 $radarrUrl = ""
 $releaseGroups = New-Object System.Collections.Generic.List[System.Object]
 
+if ($PSVersionTable.PSVersion -notlike "7.*") {
+    throw "You need Powershell 7 to run this script"
+}
+
 $webHeaders = @{
     "x-api-key" = $radarrApiKey
 }
