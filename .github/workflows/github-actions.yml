@@ -1,0 +1,10 @@
+name: Powershell Code Check
+
+on: [push, pull_request]
+
+jobs:
+  PS-Check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: PS-Check
+      uses: SleepySysadmin/github-action-pscheck@v0.4.2
