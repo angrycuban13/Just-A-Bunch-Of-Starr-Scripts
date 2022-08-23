@@ -14,3 +14,4 @@ This script will run through every release group in your Radarr library and tag 
 ## `ZakTag.ps1` usage
 
 * `pwsh zaktag.ps1`
+* `pwsh zaktag.ps1 -Verbose`
