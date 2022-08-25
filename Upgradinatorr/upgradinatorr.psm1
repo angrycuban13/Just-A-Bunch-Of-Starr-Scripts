@@ -100,6 +100,16 @@ function Read-IniFile {
     $ini
 }
 
+function Remove-Tag {
+    param (
+        $app,
+        $url,
+        $movies,
+        $tagId
+    )
+    Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
+}
+
 function Search-Movies {
     param (
         $movie,
