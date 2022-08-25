@@ -1,60 +1,76 @@
 function Add-Tag {
     param (
         $app,
-        $movie
+        $movies,
+        $tagId,
+        $url
     )
 
-    $addTag = Invoke-RestMethod -Uri "$($config.($app)."$($app)Url")/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movie.ID)],`"tags`":[$tagId],`"applyTags`":`"add`"}"
+    Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
 
     if ($apiStatusCode -notmatch "2\d\d"){
-        throw "Failed to add tag to $($movie.title) with statuscode $apiStatusCode\n content: $addTag"
+        throw "Failed to add tag to $($movie.title) with statuscode $apiStatusCode"
     }
 
 }
 
 function Confirm-AppConnectivity {
     param (
-        $app
+        $app,
+        $url
     )
 
     try {
-        Invoke-RestMethod -Uri "$($config.($app)."$($app)Url")/api/v3/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
+        Invoke-RestMethod -Uri "$($url)/api/v3/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
     }
     catch {
-        throw "$app $_."
+        throw "$((Get-Culture).TextInfo.ToTitleCase("$app")) $_."
     }
 }
 
 function Confirm-AppURL {
     param (
-        $app
+        $app,
+        $url
     )
 
-    if ($config.$($app)."$($app)Url" -notmatch "https?:\/\/" -and $config."$($app)"."$($app)Url".EndsWith("/")){
+    if ($url -notmatch "https?:\/\/" -or $url.EndsWith("/")){
         throw "Your URL for $app is not formatted correctly, it should start with http(s):// and not end in /"
+    }
+    else {
+        Write-Output "$((Get-Culture).TextInfo.ToTitleCase("$app")) URL confirmed"
     }
 }
 
 function Get-TagId {
     param (
-        $app
+        $app,
+        $tagName,
+        $url
     )
 
-    Write-Verbose "Getting tag id for $app"
-    Write-Verbose "Tag name is $($($config.$($app)."$($app)TagName"))"
-    $tagList = Invoke-RestMethod -Uri "$($config.($app)."$($app)Url")/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
-
-    $tagId = $taglist | Where-Object {$_.label -contains $config.$($app)."$($app)TagName"} | Select-Object -ExpandProperty id
-
+    $currentTagList = Invoke-RestMethod -Uri "$($url)/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
 
     if ($apiStatusCode -notmatch "2\d\d"){
         throw "Failed to get tag list"
     }
 
-    if ($tagList.label -notcontains $config.$($app)."$($app)TagName"){
-        throw "$($config.$($app)."$($app)TagName") doesn't exist in $app"
+    $tagNameId = $currentTagList | Where-Object {$_.label -contains $tagName} | Select-Object -ExpandProperty id
+
+    if ($currentTagList.label -notcontains $tagName){
+
+        $Body = @{
+            "label" = $tagName
+        } | ConvertTo-Json
+
+        Invoke-RestMethod -Uri "$($url)/api/v3/tag" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -Body $Body -ContentType "application/json" | Out-Null
+
+        $updatedTagList = Invoke-RestMethod -Uri "$($url)/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+
+        $tagNameId = $updatedTagList | Where-Object {$_.label -contains $tagName} | Select-Object -ExpandProperty id
     }
-    $tagID
+
+    $tagNameId
 }
 
 function Read-IniFile {
@@ -86,12 +102,12 @@ function Read-IniFile {
 
 function Search-Movies {
     param (
-        $app,
-        $movie
+        $movie,
+        $url
     )
-    $searchMovies = Invoke-RestMethod -Uri "$($config.($app)."$($app)Url")/api/v3/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}"
+    Invoke-RestMethod -Uri "$($url)/api/v3/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}" | Out-Null
 
     if ($apiStatusCode -notmatch "2\d\d"){
-        throw "Failed to search for $($movie.title) with statuscode $apiStatusCode\n content: $searchMovies"
+        throw "Failed to search for $($movie.title) with statuscode $apiStatusCode"
     }
 }
