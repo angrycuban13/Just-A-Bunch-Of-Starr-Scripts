@@ -8,8 +8,7 @@ param (
 
 [string]$sonarrApiKey = ""
 [string]$sonarrUrl = ""
-[int]$seriesToRename = 10
-
+$seriesToRename = "10"
 
 #------------- SCRIPT STARTS -------------#
 
@@ -29,12 +28,15 @@ $webHeaders = @{
 
 $allSeries = Invoke-RestMethod -Uri "$($sonarrUrl)/api/v3/series" -Headers $webHeaders -StatusCodeVariable apiStatusCode
 
+if ($seriesToRename -eq "max"){
+    $seriesToRename = $allseries.count
+}
+
 $filteredSeries = $allSeries | Where-Object {$_.title -notin $seriesRenamed} | Select-Object -First $seriesToRename
 
 if ($filteredSeries.count -eq 0){
     Clear-Content -Path $PSScriptRoot\seriesChecked.txt
 }
-
 
 foreach ($series in $filteredSeries){
 
