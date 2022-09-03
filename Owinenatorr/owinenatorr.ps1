@@ -1,8 +1,7 @@
 [CmdletBinding(SupportsShouldProcess)]
 param (
     [Parameter()]
-    [bool]
-    $renameSeries = $false
+    $null
 )
 
 #------------- DEFINE VARIABLES -------------#
@@ -35,6 +34,7 @@ $filteredSeries = $allSeries | Where-Object {$_.title -notin $seriesRenamed} | S
 if ($filteredSeries.count -eq 0){
     Clear-Content -Path $PSScriptRoot\seriesChecked.txt
 }
+
 
 foreach ($series in $filteredSeries){
 

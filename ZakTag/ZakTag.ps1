@@ -13,7 +13,7 @@ $releaseGroups = New-Object System.Collections.Generic.List[System.Object]
 $releaseGroupTagsOnly = New-Object System.Collections.Generic.List[System.Object]
 
 # Powershell version check
-if ($PSVersionTable.PSVersion -like "5.*") {
+if ($PSVersionTable.PSVersion.Major -lt 7){
     throw "You need at least Powershell 7 to run this script"
 }
 

@@ -20,8 +20,8 @@ param (
     $apps
 )
 
-if ($PSVersionTable.PSVersion -notlike "7.*") {
-    throw "You need Powershell 7 to run this script"
+if ($PSVersionTable.PSVersion.Major -lt 7){
+    throw "You need at least Powershell 7 to run this script"
 }
 
 # Import functions
