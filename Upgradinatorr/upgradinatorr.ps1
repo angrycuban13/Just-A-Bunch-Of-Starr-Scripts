@@ -36,9 +36,6 @@ if (Test-Path  $configFile -PathType Leaf){
 
     Write-Verbose "Parsing config file"
     $config = Read-IniFile -File $configFile
-
-    #Create global variable so it can be used by the functions
-    $global:config=$config
 }
 
 else {
@@ -54,32 +51,32 @@ foreach ($app in $apps){
         "x-api-key" = $config.$($app)."$($app)ApiKey"
     }
 
-    #Create global variables so they can be used by the functions
-    $Global:app = $app
-    $Global:webHeaders = $webHeaders
+    #Create a global variable so they can be used by the functions
+    $global:webHeaders = $webHeaders
 
     if ($app -eq "radarr"){
 
-        Write-Verbose "Confirming URL for $app"
-        Confirm-AppURL -app $app
+        Write-Verbose "Confirming URL for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
+        Confirm-AppURL -App $app -Url $($config.($app)."$($app)Url")
 
-        Write-Verbose "Confirming connectivity for $app"
-        Confirm-AppConnectivity -app $app
+        Write-Verbose "Confirming connectivity for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
+        Confirm-AppConnectivity -App $app -Url $($config.($app)."$($app)Url")
 
-        #Create global variable so it can be used by the functions
-        $global:tagId = Get-TagId -app $app
+        $tagID = Get-TagId -App $app -Url $($config.($app)."$($app)Url") -TagName $($config.$($app)."$($app)TagName")
 
-        Write-Verbose "Tag ID $tagID confirmed for $app"
+        Write-Verbose "Tag ID $tagID confirmed for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
 
         $allMovies = Invoke-RestMethod -Uri "$($config.($app)."$($app)Url")/api/v3/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
-        Write-Verbose "Retrieved a total of $($allmovies.Count) movies"
 
         if ($apiStatusCode -notmatch "2\d\d"){
             throw "Failed to get movie list"
         }
 
-        $filteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $config.General.monitored -and $_.status -eq $config.Radarr.movieStatus }
-        Write-Verbose "Filtered movies to a total of $($filteredMovies.count) movies"
+        Write-Verbose "Retrieved a total of $($allmovies.Count) movies"
+
+        $filteredMovies = $allMovies | Where-Object {$_.tags -notcontains $tagId -and $_.monitored -eq $config.Radarr.radarrMonitored -and $_.status -eq $config.Radarr.radarrMovieStatus}
+
+        Write-Verbose "Filtered movies down to $($filteredMovies.count) movies"
 
         if ($filteredMovies.Count -eq 0){
             throw "No movies left to search"
@@ -88,24 +85,20 @@ foreach ($app in $apps){
         else {
             if ($config.Radarr.radarrCount -eq "max"){
                 $config.Radarr.radarrCount = $filteredMovies.count
-                Write-Verbose "We will now search a total of $($config.Radarr.radarrCount) movies"
-            }
-            else {
-                Write-Verbose "We will now search $($config.Radarr.radarrCount) movies"
+                Write-Verbose "Radarr count set to max. `nMovie count has been modified to $($filteredMovies.count) movies"
             }
             $randomMovies = Get-Random -InputObject $filteredMovies -Count $config.Radarr.radarrCount
             $movieCounter = 0
 
-            foreach ($movie in $randomMovies) {
+            Write-Verbose "Adding tag $($config.Radarr.radarrTagName) to $($config.Radarr.radarrCount) movies"
+            Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url "$($config.($app)."$($app)Url")"
 
+            foreach ($movie in $randomMovies) {
                 $movieCounter++
-                $global:movie = $movie
                 Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $config.Radarr.radarrCount) * 100)
 
                 if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")){
-                    Write-Verbose "Adding tag ID $tagID to $($movie.title)"
-                    Add-Tag -app $app -movie $movie
-                    Search-Movies -app $app -movie $movie
+                    Search-Movies -Movie $movie -Url "$($config.($app)."$($app)Url")"
                     Write-Host "Manual search kicked off for" $movie.title
                 }
             }
@@ -113,18 +106,18 @@ foreach ($app in $apps){
     }
 
     if  ($app -eq "sonarr"){
-        throw "Sonarr does not support Custom Formats at this time"
+        throw "No"
     }
 
     if ($app -eq "lidarr"){
-        throw "Lidarr is not yet configured - and it will probably never be"
+        throw "Also no"
     }
 
     if ($app -eq "whisparr"){
-        throw "Whisparr is not yet configured"
+        throw "Also also no"
     }
 
-    elseif ($app -eq "prowlarr"){
+    if ($app -eq "prowlarr"){
         throw "Really?"
     }
 
