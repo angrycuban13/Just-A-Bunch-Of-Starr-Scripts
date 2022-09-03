@@ -99,7 +99,7 @@ foreach ($app in $apps){
 
                 if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")){
                     Search-Movies -Movie $movie -Url "$($config.($app)."$($app)Url")"
-                    Write-Host "Manual search kicked off for" $movie.title
+                    Write-Output "Manual search kicked off for" $movie.title
                 }
             }
         }
