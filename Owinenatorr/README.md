@@ -10,7 +10,7 @@ This script will grab all your series and select the first 10 on the list. After
 
 * `$sonarrApiKey` - Your Sonarr API Key
 * `$sonarrUrl` - Your Sonarr URL
-* `$seriesToRename` - Number of series you want to check at a time
+* `$seriesToRename` - Number of series you want to check at a time. This will also accept the value of `max` which will convert this variable to match the total number of series in your library
 
 ## `owinenatorr.ps1` usage
 
