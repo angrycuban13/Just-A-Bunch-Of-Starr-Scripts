@@ -10,7 +10,6 @@ param (
 [string]$sonarrUrl = ""
 $seriesToRename = "10"
 
-
 #------------- SCRIPT STARTS -------------#
 
 if ($PSVersionTable.PSVersion.Major -lt 7){
