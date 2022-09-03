@@ -20,7 +20,7 @@ param (
     $apps
 )
 
-if ($PSVersionTable.PSVersion -like "5.*") {
+if ($PSVersionTable.PSVersion.Major -lt 7){
     throw "You need at least Powershell 7 to run this script"
 }
 
