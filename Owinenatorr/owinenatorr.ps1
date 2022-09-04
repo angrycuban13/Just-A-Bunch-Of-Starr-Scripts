@@ -1,8 +1,5 @@
 [CmdletBinding(SupportsShouldProcess)]
-param (
-    [Parameter()]
-    $null
-)
+param ()
 
 #------------- DEFINE VARIABLES -------------#
 
