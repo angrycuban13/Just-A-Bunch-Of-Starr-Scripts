@@ -66,7 +66,7 @@ foreach ($app in $apps){
 
         Write-Verbose "Tag ID $tagID confirmed for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
 
-        $allMovies = Invoke-RestMethod -Uri "$($config.($app)."$($app)Url")/api/v3/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+        $filteredMovies = $allMovies | Where-Object {$_.tags -notcontains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.Radarr.radarrMonitored)) -and $_.status -eq $config.Radarr.radarrMovieStatus}
 
         if ($apiStatusCode -notmatch "2\d\d"){
             throw "Failed to get movie list"
