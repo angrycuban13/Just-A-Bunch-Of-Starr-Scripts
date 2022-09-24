@@ -27,6 +27,7 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 * `radarrMovieStatus`: Accepts `announced`, `in cinemas`, `released` and `tba`. Defaults to `released`.
 * `radarrTagName`: Tag name that will be applied to movies that are searched. If the tag does not exist in Radarr, it will create it.
 * `radarrUrl`: Radarr URL starting with `http(s)://` and **not** ending in `/`
+* `radarrUnattended`: Accepts `true` or `false`. This will make the script run in an infinite loop in case you always want to constantly search your library forever and ever until the end of the Internet. Defaults to `false`
 
 ## How To Use
 

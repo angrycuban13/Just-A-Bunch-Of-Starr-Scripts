@@ -14,7 +14,7 @@ https://stackoverflow.com/questions/417798/ini-file-parsing-in-powershell
 
 [CmdletBinding(SupportsShouldProcess)]
 param (
-    # Define apps
+    # Specify apps
     [Parameter()]
     [string[]]
     $apps
@@ -78,7 +78,40 @@ foreach ($app in $apps){
 
         Write-Verbose "Filtered movies down to $($filteredMovies.count) movies"
 
-        if ($filteredMovies.Count -eq 0){
+        if ($filteredMovies.Count -eq 0 -and ([System.Convert]::ToBoolean($config.Radarr.radarrUnattended)) -ne $false){
+
+            $moviesWithTag = $allMovies | Where-Object {$_.tags -contains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.Radarr.radarrMonitored)) -and $_.status -eq $config.Radarr.radarrMovieStatus}
+
+            Write-Verbose "Removing tag $($config.Radarr.radarrTagName) from $($moviesWithTag.Count) movies"
+
+            Remove-Tag -App $app -Url "$($config.($app)."$($app)Url")" -movies $moviesWithTag -tagId $tagID
+
+            $allMovies = Invoke-RestMethod -Uri "$($config.Radarr.radarrUrl)/api/v3/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+
+            $newFilteredMovies = $allMovies | Where-Object {$_.tags -notcontains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.Radarr.radarrMonitored)) -and $_.status -eq $config.Radarr.radarrMovieStatus}
+
+            if ($config.Radarr.radarrCount -eq "max"){
+                $config.Radarr.radarrCount = $newFilteredMovies.count
+                Write-Verbose "Radarr count set to max. `nMovie count has been modified to $($newFilteredMovies.count) movies"
+            }
+            $randomMovies = Get-Random -InputObject $newFilteredMovies -Count $config.Radarr.radarrCount
+            $movieCounter = 0
+
+            Write-Verbose "Adding tag $($config.Radarr.radarrTagName) to $($config.Radarr.radarrCount) movies"
+            Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url "$($config.($app)."$($app)Url")"
+
+            foreach ($movie in $randomMovies) {
+                $movieCounter++
+                Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $config.Radarr.radarrCount) * 100)
+
+                if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")){
+                    Search-Movies -Movie $movie -Url "$($config.($app)."$($app)Url")"
+                    Write-Output "Manual search kicked off for $($movie.title)"
+                }
+            }
+        }
+
+        elseif ($filteredMovies.Count -eq 0 -and ([System.Convert]::ToBoolean($config.Radarr.radarrUnattended)) -eq $false){
             throw "No movies left to search"
         }
 
@@ -99,22 +132,22 @@ foreach ($app in $apps){
 
                 if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")){
                     Search-Movies -Movie $movie -Url "$($config.($app)."$($app)Url")"
-                    Write-Output "Manual search kicked off for" $movie.title
+                    Write-Output "Manual search kicked off for $($movie.title)"
                 }
             }
         }
     }
 
     if  ($app -eq "sonarr"){
-        throw "No"
+        throw "I might support it once V4 hits master"
     }
 
     if ($app -eq "lidarr"){
-        throw "Also no"
+        throw "Not supported"
     }
 
     if ($app -eq "whisparr"){
-        throw "Also also no"
+        throw "Not supported"
     }
 
     if ($app -eq "prowlarr"){
