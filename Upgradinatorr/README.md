@@ -31,20 +31,22 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 
 ## How To Use
 
-* Clone repo
+The instructions are for linux, but the concepts for non-linux are the same.
+
+* Clone repo: `git clone "https://github.com/angrycuban13/Scripts.git" "/path/to/repo/clone/location/"`
 * Fill in parameters in `upgradinatorr.conf`
-* Run script
+* Run script (see below)
 
 ## `upgradinatorr.ps1` usage
 
 ### One Time
 
-    upgradinatorr.ps1 -apps radarr
+    pwsh /path/to/repo/clone/location/upgradinatorr/upgradinatorr.ps1 -apps radarr
 
 ### Verbose Output
 
-    upgradinatorr.ps1 -apps radarr -verbose
+    pwsh /path/to/repo/clone/location/upgradinatorr/upgradinatorr.ps1 -apps radarr -verbose
 
-### Scheduled
+### Scheduled Crontab
 
     0 */6 * * *    pwsh /path/to/repo/clone/location/upgradinatorr/upgradinatorr.ps1 -apps radarr
