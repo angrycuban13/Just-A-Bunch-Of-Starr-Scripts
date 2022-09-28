@@ -41,12 +41,12 @@ The instructions are for linux, but the concepts for non-linux are the same.
 
 ### One Time
 
-    pwsh /path/to/repo/clone/location/upgradinatorr/upgradinatorr.ps1 -apps radarr
+    pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr
 
 ### Verbose Output
 
-    pwsh /path/to/repo/clone/location/upgradinatorr/upgradinatorr.ps1 -apps radarr -verbose
+    pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr -verbose
 
 ### Scheduled Crontab
 
-    0 */6 * * *    pwsh /path/to/repo/clone/location/upgradinatorr/upgradinatorr.ps1 -apps radarr
+    0 */6 * * *    pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr
