@@ -201,7 +201,7 @@ function Send-DiscordWebhook {
     $payload = [PSCustomObject]@{
         embeds = $discordEmbedArray
         username = $username
-        avatar_url = "https://styles.redditmedia.com/t5_2qo1o/styles/communityIcon_el0r56cwy4u31.png"
+        avatar_url = "https://github.com/angrycuban13/Scripts/blob/sonarr/Images/powershell.png"
     }
 
     Invoke-RestMethod -Uri $url -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType 'application/json'
