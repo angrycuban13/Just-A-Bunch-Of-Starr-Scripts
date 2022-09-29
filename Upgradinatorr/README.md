@@ -1,6 +1,6 @@
 # README
 
-Script to manually search *n* items that are not tagged with a specific tag in your - Radarr only for now -  media library. *n* is the number of items this script will search for, this has the added benefit that you don't hammer your indexers and get banned :)
+Script to manually search *n* items that are not tagged with a specific tag in your Radarr/Sonarr media library. *n* is the number of items this script will search for, this has the added benefit that you don't hammer your indexers and get banned :)
 
 ## Requirements
 
