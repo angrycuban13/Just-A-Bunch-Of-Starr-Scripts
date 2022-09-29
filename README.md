@@ -6,4 +6,4 @@ These scripts interact directly with Radarr/Sonarr API for the most part. Someon
 
 * [Upgradinatorr](https://github.com/angrycuban13/Scripts/blob/main/Upgradinatorr/README.md)
 * [Owinenatorr](https://github.com/angrycuban13/Scripts/blob/1dbfbb4278cbd075cf8eb5b316888e144ff9dd5b/ZakTag/README.md#L1)
-* [ZakTag](https://github.com/angrycuban13/Scripts/blob/1dbfbb4278cbd075cf8eb5b316888e144ff9dd5b/ZakTag/README.md#L1)]
+* [ZakTag](https://github.com/angrycuban13/Scripts/blob/1dbfbb4278cbd075cf8eb5b316888e144ff9dd5b/ZakTag/README.md#L1)
