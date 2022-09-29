@@ -46,6 +46,7 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 The instructions are for linux, but the concepts for non-linux are the same.
 
 * Clone repo: `git clone "https://github.com/angrycuban13/Scripts.git" "/path/to/repo/clone/location/"`
+* Rename `upgradinatorr-example.conf` to `upgradinatorr.conf`
 * Fill in parameters in `upgradinatorr.conf`
 * Run script (see below)
 
