@@ -1,6 +1,6 @@
 # README
 
-Script to manually search *n* items that are not tagged with a specific tag in your - Radarr only for now -  media library. *n* is the number of items this script will search for, this has the added benefit that you don't hammer your indexers and get banned :)
+Script to manually search *n* items that are not tagged with a specific tag in your Radarr/Sonarr media library. *n* is the number of items this script will search for, this has the added benefit that you don't hammer your indexers and get banned :)
 
 ## Requirements
 
@@ -19,6 +19,8 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 
 ### General
 
+* `discordWebhook`: Discord webhook to send notifications when no movies movies or series are left to search. Defaults to empty
+
 ### Radarr
 
 * `radarrApiKey`: Your Radarr API key. Defaults to empty unless I commit my API key lol.
@@ -28,6 +30,16 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 * `radarrTagName`: Tag name that will be applied to movies that are searched. If the tag does not exist in Radarr, it will create it.
 * `radarrUnattended`: Accepts `true` or `false`. This will make the script run in an infinite loop in case you always want to constantly search your library forever and ever until the end of the Internet. Defaults to `false`
 * `radarrUrl`: Radarr URL starting with `http(s)://` and **not** ending in `/`
+
+### Sonarr
+
+* `sonarrApiKey`: Your Sonarr API key. Defaults to empty unless I commit my API key lol.
+* `sonarrCount`: Number of series to be searched. Defaults to 5.
+* `sonarrMonitored`: Accepts `true` or `false`. If you want to search monitored series, set to `true`. If you want to search unmonitored series, set to `false`. Defaults to `true`.
+* `sonarrSeriesStatus`: Accepts any values listed [here](https://github.com/Sonarr/Sonarr/blob/0a2b109a3fe101e260b623d0768240ef8b7a47ae/frontend/src/Components/Filter/Builder/SeriesStatusFilterBuilderRowValue.js#L5-L7). Defaults to empty
+* `sonarrTagName`:  Tag name that will be applied to series that are searched. If the tag does not exist in Sonarr, it will create it.
+* `sonarrUnattended`: Accepts `true` or `false`. This will make the script run in an infinite loop in case you always want to constantly search your library forever and ever until the end of the Internet. Defaults to `false`
+* `sonarrUrl`: Sonarr URL starting with `http(s)://` and **not** ending in `/`
 
 ## How To Use
 
@@ -42,6 +54,10 @@ The instructions are for linux, but the concepts for non-linux are the same.
 ### One Time
 
     pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr
+
+#### One Time - Multiple Apps
+
+    pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr,sonarr
 
 ### Verbose Output
 
