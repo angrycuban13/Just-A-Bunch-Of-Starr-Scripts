@@ -129,8 +129,13 @@ foreach ($app in $apps){
         }
 
         elseif ($filteredMovies.Count -eq 0 -and ([System.Convert]::ToBoolean($config.($app)."$($app)Unattended")) -eq $false){
-            throw "No movies left to search"
-        }
+            if ($config.General.discordWebhook -ne ""){
+                Send-DiscordWebhook -App $app -Url $config.General.discordWebhook -Verbose
+            }
+
+            else{
+                throw "No series left to search"
+            }        }
 
         else {
             if ($config.($app)."$($app)Count" -eq "max"){
@@ -261,7 +266,13 @@ foreach ($app in $apps){
         }
 
         elseif ($filteredSeries.Count -eq 0 -and ([System.Convert]::ToBoolean($config.($app)."$($app)Unattended")) -eq $false){
-            throw "No series left to search"
+            if ($config.General.discordWebhook -ne ""){
+                Send-DiscordWebhook -App $app -Url $config.General.discordWebhook
+            }
+
+            else{
+                throw "No series left to search"
+            }
         }
 
         else {

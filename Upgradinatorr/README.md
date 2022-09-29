@@ -19,6 +19,8 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 
 ### General
 
+* `discordWebhook`: Discord webhook to send notifications when no movies movies or series are left to search. Defaults to empty
+
 ### Radarr
 
 * `radarrApiKey`: Your Radarr API key. Defaults to empty unless I commit my API key lol.
