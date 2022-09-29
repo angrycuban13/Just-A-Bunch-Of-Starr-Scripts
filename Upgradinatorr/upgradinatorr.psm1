@@ -1,20 +1,32 @@
 function Add-Tag {
+    [CmdletBinding()]
     param (
         $app,
         $movies,
+        $series,
         $tagId,
         $url
     )
 
-    Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
+    if ($app -eq "Radarr"){
+        Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
 
-    if ($apiStatusCode -notmatch "2\d\d"){
-        throw "Failed to add tag to $($movie.title) with statuscode $apiStatusCode"
+        if ($apiStatusCode -notmatch "2\d\d"){
+            throw "Failed to get tag list"
+        }
     }
 
+    elseif ($app -eq "Sonarr"){
+        Invoke-RestMethod -Uri "$($url)/api/v3/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"seriesIds`":[$($series.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
+
+        if ($apiStatusCode -notmatch "2\d\d"){
+            throw "Failed to get tag list"
+        }
+    }
 }
 
 function Confirm-AppConnectivity {
+    [CmdletBinding()]
     param (
         $app,
         $url
@@ -22,6 +34,7 @@ function Confirm-AppConnectivity {
 
     try {
         Invoke-RestMethod -Uri "$($url)/api/v3/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
+        Write-Verbose "Connectivity to $((Get-Culture).TextInfo.ToTitleCase("$app")) confirmed"
     }
     catch {
         throw "$((Get-Culture).TextInfo.ToTitleCase("$app")) $_."
@@ -29,20 +42,22 @@ function Confirm-AppConnectivity {
 }
 
 function Confirm-AppURL {
+    [CmdletBinding()]
     param (
         $app,
         $url
     )
 
     if ($url -notmatch "https?:\/\/" -or $url.EndsWith("/")){
-        throw "Your URL for $app is not formatted correctly, it should start with http(s):// and not end in /"
+        throw "Your URL for $((Get-Culture).TextInfo.ToTitleCase($app)) is not formatted correctly, it should start with http(s):// and not end in /"
     }
     else {
-        Write-Output "$((Get-Culture).TextInfo.ToTitleCase("$app")) URL confirmed"
+        Write-Verbose "$((Get-Culture).TextInfo.ToTitleCase("$app")) URL confirmed"
     }
 }
 
 function Get-TagId {
+    [CmdletBinding()]
     param (
         $app,
         $tagName,
@@ -71,9 +86,11 @@ function Get-TagId {
     }
 
     $tagNameId
+    Write-Verbose "Tag ID $tagNameId confirmed for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
 }
 
 function Read-IniFile {
+    [CmdletBinding()]
     param (
         $file
     )
@@ -101,16 +118,34 @@ function Read-IniFile {
 }
 
 function Remove-Tag {
+    [CmdletBinding()]
     param (
         $app,
         $url,
         $movies,
+        $series,
         $tagId
     )
-    Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
+
+    if ($app -eq "Radarr"){
+        Invoke-RestMethod -Uri "$($url)/api/v3/movies/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
+
+        if ($apiStatusCode -notmatch "2\d\d"){
+            throw "Failed to get movie list"
+        }
+    }
+
+    elseif ($app -eq "Sonarr"){
+        Invoke-RestMethod -Uri "$($url)/api/v3/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"seriesIds`":[$($series.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
+
+        if ($apiStatusCode -notmatch "2\d\d"){
+            throw "Failed to get movie list"
+        }
+    }
 }
 
 function Search-Movies {
+    [CmdletBinding()]
     param (
         $movie,
         $url
@@ -119,5 +154,18 @@ function Search-Movies {
 
     if ($apiStatusCode -notmatch "2\d\d"){
         throw "Failed to search for $($movie.title) with statuscode $apiStatusCode"
+    }
+}
+
+function Search-Series {
+    [CmdletBinding()]
+    param (
+        $series,
+        $url
+    )
+    Invoke-RestMethod -Uri "$($url)/api/v3/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"SeriesSearch`",`"seriesId`":$($series.ID)}" | Out-Null
+
+    if ($apiStatusCode -notmatch "2\d\d"){
+        throw "Failed to search for $($series.title) with statuscode $apiStatusCode"
     }
 }
