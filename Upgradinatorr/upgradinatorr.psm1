@@ -128,7 +128,7 @@ function Remove-Tag {
     )
 
     if ($app -eq "Radarr"){
-        Invoke-RestMethod -Uri "$($url)/api/v3/movies/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
+        Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
 
         if ($apiStatusCode -notmatch "2\d\d"){
             throw "Failed to get movie list"
