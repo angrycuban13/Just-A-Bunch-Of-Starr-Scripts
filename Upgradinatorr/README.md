@@ -4,7 +4,7 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 
 ## Requirements
 
-* Powershell 7: To install Powershell 7, follow [this link](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.2)
+* Powershell 7: To install Powershell 7, follow [this link](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7.2)
 * `Upgrade Until Custom Format Score` set to at least `10000`
   * Radarr > Settings > Profiles > Quality Profile > Upgrade Until Custom Format Score
 * *Optional*: Using [TRaSH guides](https://trash-guides.info/)
