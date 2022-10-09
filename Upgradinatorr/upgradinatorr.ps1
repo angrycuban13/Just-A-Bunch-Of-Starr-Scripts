@@ -134,7 +134,7 @@ foreach ($app in $apps){
             }
 
             else{
-                throw "No series left to search"
+                throw "No movies left to search"
             }        }
 
         else {
