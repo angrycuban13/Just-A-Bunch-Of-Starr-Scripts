@@ -23,23 +23,23 @@ Script to manually search *n* items that are not tagged with a specific tag in y
 
 ### Radarr
 
-* `radarrApiKey`: Your Radarr API key. Defaults to empty unless I commit my API key lol.
-* `radarrCount`: Number of movies to be searched. Defaults to 10.
-* `radarrMonitored`: Accepts `true` or `false`. If you want to search monitored movies, set to `true`. If you want to search unmonitored movies, set to `false`. Defaults to `true`.
-* `radarrMovieStatus`: Accepts `announced`, `in cinemas`, `released` and `tba`. Defaults to `released`.
-* `radarrTagName`: Tag name that will be applied to movies that are searched. If the tag does not exist in Radarr, it will create it.
-* `radarrUnattended`: Accepts `true` or `false`. This will make the script run in an infinite loop in case you always want to constantly search your library forever and ever until the end of the Internet. Defaults to `false`
-* `radarrUrl`: Radarr URL starting with `http(s)://` and **not** ending in `/`
+* `ApiKey`: Your Radarr API key. Defaults to empty unless I commit my API key lol.
+* `Count`: Number of movies to be searched. Defaults to 10.
+* `Monitored`: Accepts `true` or `false`. If you want to search monitored movies, set to `true`. If you want to search unmonitored movies, set to `false`. Defaults to `true`.
+* `MovieStatus`: Accepts `announced`, `in cinemas`, `released` and `tba`. Defaults to `released`.
+* `TagName`: Tag name that will be applied to movies that are searched. If the tag does not exist in Radarr, it will create it.
+* `Unattended`: Accepts `true` or `false`. This will make the script run in an infinite loop in case you always want to constantly search your library forever and ever until the end of the Internet. Defaults to `false`
+* `Url`: Radarr URL starting with `http(s)://` and **not** ending in `/`
 
 ### Sonarr
 
-* `sonarrApiKey`: Your Sonarr API key. Defaults to empty unless I commit my API key lol.
-* `sonarrCount`: Number of series to be searched. Defaults to 5.
-* `sonarrMonitored`: Accepts `true` or `false`. If you want to search monitored series, set to `true`. If you want to search unmonitored series, set to `false`. Defaults to `true`.
-* `sonarrSeriesStatus`: Accepts any values listed [here](https://github.com/Sonarr/Sonarr/blob/0a2b109a3fe101e260b623d0768240ef8b7a47ae/frontend/src/Components/Filter/Builder/SeriesStatusFilterBuilderRowValue.js#L5-L7). Defaults to empty
-* `sonarrTagName`:  Tag name that will be applied to series that are searched. If the tag does not exist in Sonarr, it will create it.
-* `sonarrUnattended`: Accepts `true` or `false`. This will make the script run in an infinite loop in case you always want to constantly search your library forever and ever until the end of the Internet. Defaults to `false`
-* `sonarrUrl`: Sonarr URL starting with `http(s)://` and **not** ending in `/`
+* `ApiKey`: Your Sonarr API key. Defaults to empty unless I commit my API key lol.
+* `Count`: Number of series to be searched. Defaults to 5.
+* `Monitored`: Accepts `true` or `false`. If you want to search monitored series, set to `true`. If you want to search unmonitored series, set to `false`. Defaults to `true`.
+* `SeriesStatus`: Accepts any values listed [here](https://github.com/Sonarr/Sonarr/blob/0a2b109a3fe101e260b623d0768240ef8b7a47ae/frontend/src/Components/Filter/Builder/SeriesStatusFilterBuilderRowValue.js#L5-L7). Defaults to empty
+* `TagName`:  Tag name that will be applied to series that are searched. If the tag does not exist in Sonarr, it will create it.
+* `Unattended`: Accepts `true` or `false`. This will make the script run in an infinite loop in case you always want to constantly search your library forever and ever until the end of the Internet. Defaults to `false`
+* `Url`: Sonarr URL starting with `http(s)://` and **not** ending in `/`
 
 ## How To Use
 

@@ -8,7 +8,7 @@ function Add-Tag {
         $url
     )
 
-    if ($app -eq "Radarr"){
+    if ($app -like "*Radarr*"){
         Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
 
         if ($apiStatusCode -notmatch "2\d\d"){
@@ -16,7 +16,7 @@ function Add-Tag {
         }
     }
 
-    elseif ($app -eq "Sonarr"){
+    elseif ($app -like "*Sonarr*"){
         Invoke-RestMethod -Uri "$($url)/api/v3/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"seriesIds`":[$($series.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
 
         if ($apiStatusCode -notmatch "2\d\d"){
@@ -127,7 +127,7 @@ function Remove-Tag {
         $tagId
     )
 
-    if ($app -eq "Radarr"){
+    if ($app -like "*Radarr*"){
         Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
 
         if ($apiStatusCode -notmatch "2\d\d"){
@@ -135,7 +135,7 @@ function Remove-Tag {
         }
     }
 
-    elseif ($app -eq "Sonarr"){
+    elseif ($app -like "*Sonarr*"){
         Invoke-RestMethod -Uri "$($url)/api/v3/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"seriesIds`":[$($series.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
 
         if ($apiStatusCode -notmatch "2\d\d"){
@@ -179,10 +179,10 @@ function Send-DiscordWebhook {
     [System.Collections.ArrayList]$discordEmbedArray= @()
     $color = '15548997'
     $title = "Upgradinatorr"
-    if ($app -eq "Radarr"){
+    if ($app -like "*Radarr*"){
         $description = "No movies left to search!"
     }
-    elseif ($app -eq "Sonarr") {
+    elseif ($app -like "*Sonarr*") {
         $description = "No series left to search!"
     }
     $username = "Upgradinatorr"
