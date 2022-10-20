@@ -46,19 +46,19 @@ Write-Verbose 'Config file parsed successfully'
 
 foreach ($app in $apps) {
 
-    if ($app -like '*lidarr*') {
+    if ($app -like "*lidarr*") {
         throw 'Lidarr is not supported'
     }
 
-    if ($app -like '*whisparr*') {
+    if ($app -like "*whisparr*") {
         throw 'Whisparr is not supported'
     }
     
-    if ($app -like '*readarr*') {
+    if ($app -like "*readarr*") {
         throw 'Readarr is not supported'
     }
 
-    if ($app -like '*prowlarr*') {
+    if ($app -like "*prowlarr*") {
         throw 'Really? There is nothing for me to search in Prowlarr.'
     }
 
@@ -96,7 +96,7 @@ foreach ($app in $apps) {
 
     Write-Verbose "Tag ID $tagID confirmed for $appTitle"
 
-    if ($app -like '*radarr*') {
+    if ($app -like "*radarr*") {
 
         $allMovies = Get-ArrItems($app, $aurl)
 
@@ -199,7 +199,7 @@ foreach ($app in $apps) {
         }
     }
 
-    if ($app -like '*sonarr*') {
+    if ($app -like "*sonarr*") {
 
         $allSeries = Get-ArrItems($app, $aurl)
 
