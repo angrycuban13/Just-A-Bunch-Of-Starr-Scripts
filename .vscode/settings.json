@@ -1,0 +1,10 @@
+{
+    "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
+    "powershell.powerShellDefaultVersion": "PowerShell Core 7 (x64)",
+    "powershell.codeFormatting.whitespaceBetweenParameters": true,
+    "powershell.codeFormatting.useCorrectCasing": true,
+    "powershell.integratedConsole.suppressStartupBanner": true,
+    "powershell.codeFormatting.openBraceOnSameLine": true,
+    "powershell.codeFormatting.autoCorrectAliases": true,
+    "powershell.codeFormatting.preset": "Custom"
+}
