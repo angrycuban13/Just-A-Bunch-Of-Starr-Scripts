@@ -1,4 +1,7 @@
-function Add-Tag {
+$api_version_radarr = 'v3'
+$api_version_sonarr = 'v3'
+function Add-Tag
+{
     [CmdletBinding()]
     param (
         $app,
@@ -8,55 +11,124 @@ function Add-Tag {
         $url
     )
 
-    if ($app -like "*Radarr*"){
-        Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
+    if ($app -like '*Radarr*')
+    {
+        Invoke-RestMethod -Uri "$($url)/api/$($api_version_radarr)/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"movieIds`":[$($movies.ID -join ',')],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
 
-        if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Failed to get tag list"
+        if (Confirm-ArrResp($apiStatusCode))
+        {
+        }
+        {
+            throw 'Failed to get tag list'
         }
     }
 
-    elseif ($app -like "*Sonarr*"){
-        Invoke-RestMethod -Uri "$($url)/api/v3/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"seriesIds`":[$($series.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
+    elseif ($app -like '*Sonarr*')
+    {
+        Invoke-RestMethod -Uri "$($url)/api/$($api_version_sonarr)/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"seriesIds`":[$($series.ID -join ',')],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
 
-        if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Failed to get tag list"
+        if (Confirm-ArrResp($apiStatusCode))
+        {
+        }
+        {
+            throw 'Failed to get tag list'
         }
     }
 }
 
-function Confirm-AppConnectivity {
+function Confirm-ArrResp
+{
+    [CmdletBinding()]
+    param (
+        $apiStatusCode
+    )
+
+    switch ( $apiStatusCode )
+    {
+        200 { $true }
+        201 { $true }
+        202 { $true }
+        302 { throw 'Encountered redirect. Possible missing urlbase?' }
+        401 { throw 'Unauthorized. Possibly invalid apikey' }
+    }
+
+    throw 'Unexpected HTTP status code - $apiStatusCode'
+
+}
+
+function Confirm-AppConnectivity
+{
     [CmdletBinding()]
     param (
         $app,
         $url
     )
 
-    try {
-        Invoke-RestMethod -Uri "$($url)/api/v3/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
+    if ($app -like '*Radarr*')
+    {
+        $apiversion = $api_version_radarr
+    }
+    elseif ($app -like '*Sonarr*')
+    {
+        $apiversion = $api_version_sonarr
+    }
+    try
+    {
+        Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
         Write-Verbose "Connectivity to $((Get-Culture).TextInfo.ToTitleCase("$app")) confirmed"
     }
-    catch {
+    catch
+    {
         throw "$((Get-Culture).TextInfo.ToTitleCase("$app")) $_."
     }
 }
 
-function Confirm-AppURL {
+function Confirm-AppURL
+{
     [CmdletBinding()]
     param (
         $app,
         $url
     )
 
-    if ($url -notmatch "https?:\/\/" -or $url.EndsWith("/")){
-        throw "Your URL for $((Get-Culture).TextInfo.ToTitleCase($app)) is not formatted correctly, it should start with http(s):// and not end in /"
+    if ($url -notmatch 'https?:\/\/')
+    {
+        throw "Your URL for $((Get-Culture).TextInfo.ToTitleCase($app)) is not formatted correctly, it must start with http(s)://"
     }
-    else {
+    else
+    {
         Write-Verbose "$((Get-Culture).TextInfo.ToTitleCase("$app")) URL confirmed"
     }
 }
 
-function Get-TagId {
+function Get-ArrItems
+{
+    [CmdletBinding()]
+    param (
+        $app,
+        $url
+    )
+
+    if ($app -like '*Radarr*')
+    {
+        $result = $(Invoke-RestMethod -Uri "$aurl/api/$($api_version_radarr)/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode)
+    }
+    elseif ($app -like '*Sonarr*')
+    {
+        $result = $(Invoke-RestMethod -Uri "$aurl/api/$($api_version_sonarr)/series" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode)
+    }
+
+    if (Confirm-ArrResp($apiStatusCode))
+    {
+        $result
+    }
+    else
+    {
+        throw 'Failed to get items'
+    }
+}
+function Get-TagId
+{
     [CmdletBinding()]
     param (
         $app,
@@ -64,32 +136,47 @@ function Get-TagId {
         $url
     )
 
-    $currentTagList = Invoke-RestMethod -Uri "$($url)/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
-
-    if ($apiStatusCode -notmatch "2\d\d"){
-        throw "Failed to get tag list"
+    if ($app -like '*Radarr*')
+    {
+        $apiversion = $api_version_radarr
+    }
+    elseif ($app -like '*Sonarr*')
+    {
+        $apiversion = $api_version_sonarr
     }
 
-    $tagNameId = $currentTagList | Where-Object {$_.label -contains $tagName} | Select-Object -ExpandProperty id
+    $currentTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
 
-    if ($currentTagList.label -notcontains $tagName){
+    if (Confirm-ArrResp($apiStatusCode))
+    {
+        $tagNameId = $currentTagList | Where-Object { $_.label -contains $tagName } | Select-Object -ExpandProperty id
 
-        $Body = @{
-            "label" = $tagName
-        } | ConvertTo-Json
+        if ($currentTagList.label -notcontains $tagName)
+        {
 
-        Invoke-RestMethod -Uri "$($url)/api/v3/tag" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -Body $Body -ContentType "application/json" | Out-Null
+            $Body = @{
+                'label' = $tagName
+            } | ConvertTo-Json
 
-        $updatedTagList = Invoke-RestMethod -Uri "$($url)/api/v3/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+            Invoke-RestMethod -Uri "$($url)/api/$($apiversion)//tag" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -Body $Body -ContentType 'application/json' | Out-Null
 
-        $tagNameId = $updatedTagList | Where-Object {$_.label -contains $tagName} | Select-Object -ExpandProperty id
+            $updatedTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiversion)//tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+
+            $tagNameId = $updatedTagList | Where-Object { $_.label -contains $tagName } | Select-Object -ExpandProperty id
+        }
+
+        $tagNameId
+        Write-Verbose "Tag ID $tagNameId confirmed for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
+    }
+    else
+    {
+        throw 'Failed to get tags'
     }
 
-    $tagNameId
-    Write-Verbose "Tag ID $tagNameId confirmed for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
 }
 
-function Read-IniFile {
+function Read-IniFile
+{
     [CmdletBinding()]
     param (
         $file
@@ -98,18 +185,22 @@ function Read-IniFile {
     $ini = @{}
 
     # Create a default section if none exist in the file. Like a java prop file.
-    $section = "NO_SECTION"
+    $section = 'NO_SECTION'
     $ini[$section] = @{}
 
-    switch -regex -file $file {
-        "^\[(.+)\]$" {
+    switch -regex -file $file
+    {
+        '^\[(.+)\]$'
+        {
             $section = $matches[1].Trim()
             $ini[$section] = @{}
         }
-        "^\s*([^#].+?)\s*=\s*(.*)" {
-            $name,$value = $matches[1..2]
+        '^\s*([^#].+?)\s*=\s*(.*)'
+        {
+            $name, $value = $matches[1..2]
             # skip comments that start with semicolon:
-            if (!($name.StartsWith(";"))) {
+            if (!($name.StartsWith(';')))
+            {
                 $ini[$section][$name] = $value.Trim()
             }
         }
@@ -117,7 +208,8 @@ function Read-IniFile {
     $ini
 }
 
-function Remove-Tag {
+function Remove-Tag
+{
     [CmdletBinding()]
     param (
         $app,
@@ -127,81 +219,97 @@ function Remove-Tag {
         $tagId
     )
 
-    if ($app -like "*Radarr*"){
-        Invoke-RestMethod -Uri "$($url)/api/v3/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
-
-        if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Failed to get movie list"
-        }
+    if ($app -like '*Radarr*')
+    {
+        Invoke-RestMethod -Uri "$($url)/api/$($api_version_radarr)/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"movieIds`":[$($movies.id -join ',')],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
     }
 
-    elseif ($app -like "*Sonarr*"){
-        Invoke-RestMethod -Uri "$($url)/api/v3/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"seriesIds`":[$($series.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
-
-        if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Failed to get movie list"
-        }
+    elseif ($app -like '*Sonarr*')
+    {
+        Invoke-RestMethod -Uri "$($url)/api/$($api_version_sonarr)/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"seriesIds`":[$($series.id -join ',')],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
+    }
+    if (Confirm-ArrResp($apiStatusCode))
+    {
+    }
+    else
+    {
+        throw 'Failed to remove tag'
     }
 }
 
-function Search-Movies {
+function Search-Movies
+{
     [CmdletBinding()]
     param (
         $movie,
         $url
     )
-    Invoke-RestMethod -Uri "$($url)/api/v3/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}" | Out-Null
 
-    if ($apiStatusCode -notmatch "2\d\d"){
+    Invoke-RestMethod -Uri "$($url)/api/$($api_version_radarr)/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}" | Out-Null
+    
+    if (Confirm-ArrResp($apiStatusCode))
+    {
+    }
+    else
+    {
         throw "Failed to search for $($movie.title) with statuscode $apiStatusCode"
     }
 }
 
-function Search-Series {
+function Search-Series
+{
     [CmdletBinding()]
     param (
         $series,
         $url
     )
-    Invoke-RestMethod -Uri "$($url)/api/v3/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"SeriesSearch`",`"seriesId`":$($series.ID)}" | Out-Null
+    Invoke-RestMethod -Uri "$($url)/api/$($api_version_sonarr)/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"name`":`"SeriesSearch`",`"seriesId`":$($series.ID)}" | Out-Null
 
-    if ($apiStatusCode -notmatch "2\d\d"){
+    if (Confirm-ArrResp($apiStatusCode))
+    {
+    }
+    else
+    {
         throw "Failed to search for $($series.title) with statuscode $apiStatusCode"
     }
 }
 
-function Send-DiscordWebhook {
+function Send-DiscordWebhook
+{
     [CmdletBinding()]
     param (
         $app,
         $url
     )
-    [System.Collections.ArrayList]$discordEmbedArray= @()
+    [System.Collections.ArrayList]$discordEmbedArray = @()
     $color = '15548997'
-    $title = "Upgradinatorr"
-    if ($app -like "*Radarr*"){
-        $description = "No movies left to search!"
+    $title = 'Upgradinatorr'
+    $thumburl = 'https://raw.githubusercontent.com/angrycuban13/Scripts/main/Images/powershell.png'
+    if ($app -like '*Radarr*')
+    {
+        $description = 'No movies left to search!'
     }
-    elseif ($app -like "*Sonarr*") {
-        $description = "No series left to search!"
+    elseif ($app -like '*Sonarr*')
+    {
+        $description = 'No series left to search!'
     }
-    $username = "Upgradinatorr"
+    $username = 'Upgradinatorr'
     $thumbnailObject = [PSCustomObject]@{
-        url = "https://raw.githubusercontent.com/angrycuban13/Scripts/main/Images/powershell.png"
+        url = $thumburl
     }
 
     $embedObject = [PSCustomObject]@{
-        color = $color
-        title = $title
+        color       = $color
+        title       = $title
         description = $description
-        thumbnail = $thumbnailObject
+        thumbnail   = $thumbnailObject
     }
 
     $discordEmbedArray.Add($embedObject)
     $payload = [PSCustomObject]@{
-        embeds = $discordEmbedArray
-        username = $username
-        avatar_url = "https://raw.githubusercontent.com/angrycuban13/Scripts/main/Images/powershell.png"
+        embeds     = $discordEmbedArray
+        username   = $username
+        avatar_url = $thumburl
     }
 
     Invoke-RestMethod -Uri $url -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType 'application/json'

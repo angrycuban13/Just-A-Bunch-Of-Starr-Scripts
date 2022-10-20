@@ -20,8 +20,9 @@ param (
     $apps
 )
 
-if ($PSVersionTable.PSVersion.Major -lt 7){
-    throw "You need at least Powershell 7 to run this script"
+if ($PSVersionTable.PSVersion.Major -lt 7)
+{
+    throw 'You need at least Powershell 7 to run this script'
 }
 
 # Import functions
@@ -32,139 +33,197 @@ $configFile = Join-Path -Path $PSScriptRoot -ChildPath upgradinatorr.conf
 Write-Verbose "Location for config file is $configFile"
 
 #Read the parameters from the config file.
-if (Test-Path  $configFile -PathType Leaf){
+if (Test-Path $configFile -PathType Leaf)
+{
 
-    Write-Verbose "Parsing config file"
+    Write-Verbose 'Parsing config file'
     $config = Read-IniFile -File $configFile
 }
 
-else {
-    throw "Could not find config file"
+else
+{
+    throw 'Could not find config file'
 }
 
-Write-Verbose "Config file parsed successfully"
+Write-Verbose 'Config file parsed successfully'
 
+foreach ($app in $apps)
+{
 
-foreach ($app in $apps){
-    $webHeaders = @{
-        "x-api-key" = $config.$($app)."ApiKey"
+    if ($app -like '*lidarr*')
+    {
+        throw 'Lidarr is not supported'
     }
 
-    #Create a global variable so they can be used by the functions
+    if ($app -like '*whisparr*')
+    {
+        throw 'Whisparr is not supported'
+    }
+    
+    if ($app -like '*readarr*')
+    {
+        throw 'Readarr is not supported'
+    }
+
+    if ($app -like '*prowlarr*')
+    {
+        throw 'Really? There is nothing for me to search in Prowlarr.'
+    }
+
+    $appconfig = $($config.$($app))
+    $webHeaders = @{'x-api-key' = $appconfig.'ApiKey' }
+    $aurl = $($appconfig.'Url').TrimEnd('/')
+    $tagname = $($appconfig.'TagName')
+    $maxcount = $($appconfig.'Count')
+    $logVerbose = $($PSCmdlet.MyInvocation.BoundParameters['Verbose'].IsPresent)
+    $apptitle = $((Get-Culture).TextInfo.ToTitleCase("$app"))
+    $appmonitored = $([System.Convert]::ToBoolean($appconfig.'Monitored'))
+    $rununattended = $([System.Convert]::ToBoolean($appconfig.'Unattended'))
+    # Create a global variable so they can be used by the functions
     $global:webHeaders = $webHeaders
 
-    if ($app -like "*radarr*"){
-        if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-            Confirm-AppURL -App $app -Url $($config.($app)."Url") -Verbose
-            Confirm-AppConnectivity -App $app -Url $($config.($app)."Url") -Verbose
-        }
+    Write-Output "Starting $apptitle search"
+    Write-Output "Config - URL: $aurl"
+    Write-Output "Config - TagName: $tagname"
+    Write-Output "Config - Monitored: $appmonitored"
+    Write-Output "Config - Unattended: $rununattended"
+    Write-Output "Config - Limit: $maxcount"
+    Write-Output "Config - TagName: $tagname"
 
-        else {
-        Confirm-AppURL -App $app -Url $($config.($app)."Url") -Verbose
-        Confirm-AppConnectivity -App $app -Url $($config.($app)."Url") -Verbose
-        }
+    if ($logVerbose)
+    {
+        Write-Output 'Verbose logging enabled'
+        Confirm-AppURL -App $app -Url $aurl -Verbose
+        Confirm-AppConnectivity -App $app -Url $aurl -Verbose
+    }
+    else
+    {
+        Confirm-AppURL -App $app -Url $aurl
+        Confirm-AppConnectivity -App $app -Url $aurl
+    }
 
-        $tagID = Get-TagId -App $app -Url $($config.($app)."Url") -TagName $($config.$($app)."TagName")
+    $tagID = Get-TagId -App $app -Url $aurl -TagName $tagname
 
-        Write-Verbose "Tag ID $tagID confirmed for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
+    Write-Verbose "Tag ID $tagID confirmed for $appTitle"
 
-        $allMovies = Invoke-RestMethod -Uri "$($config.($app)."Url")/api/v3/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+    if ($app -like '*radarr*')
+    {
 
-        if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Failed to get movie list"
-        }
+        $allMovies = Get-ArrItems($app, $aurl)
 
         Write-Verbose "Retrieved a total of $($allmovies.Count) movies"
 
-        $filteredMovies = $allMovies | Where-Object {$_.tags -notcontains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.$($app)."Monitored")) -and $_.status -eq $config.($app)."MovieStatus"}
+        $filteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'MovieStatus' }
 
         Write-Verbose "Filtered movies down to $($filteredMovies.count) movies"
 
-        if ($filteredMovies.Count -eq 0 -and ([System.Convert]::ToBoolean($config.($app)."Unattended")) -ne $false){
-            $moviesWithTag = $allMovies | Where-Object {$_.tags -contains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.($app)."Monitored")) -and $_.status -eq $config.($app)."MovieStatus"}
+        if ($filteredMovies.Count -eq 0 -and $rununattended -ne $false)
+        {
+            $moviesWithTag = $allMovies | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'MovieStatus' }
 
-            Write-Verbose "Removing tag $($config.$($app)."TagName") from $($moviesWithTag.Count) movies"
+            Write-Verbose "Removing tag $tagname from $($moviesWithTag.Count) movies"
 
-            if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                Remove-Tag -App $app -Url "$($config.($app)."Url")" -movies $moviesWithTag -tagId $tagID -Verbose
+            if ($logVerbose)
+            {
+                Remove-Tag -App $app -Url $aurl -movies $moviesWithTag -tagId $tagID -Verbose
             }
 
-            else {
-                Remove-Tag -App $app -Url "$($config.($app)."Url")" -movies $moviesWithTag -tagId $tagID -Verbose
+            else
+            {
+                Remove-Tag -App $app -Url $aurl -movies $moviesWithTag -tagId $tagID
             }
 
-            $allMovies = Invoke-RestMethod -Uri "$($config.($app)."Url")/api/v3/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+            $allMovies = Get-ArrItems($app, $aurl)
 
-            $newFilteredMovies = $allMovies | Where-Object {$_.tags -notcontains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.($app)."Monitored")) -and $_.status -eq $config.($app)."MovieStatus"}
+            $newFilteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'MovieStatus' }
 
-            if ($config.$($app)."Count" -eq "max"){
-                $config.($app)."Count" = $newFilteredMovies.count
-                Write-Verbose "$((Get-Culture).TextInfo.ToTitleCase("$app")) count set to max. `nMovie count has been modified to $($newFilteredMovies.count) movies"
+            if ($appconfig.'Count' -eq 'max')
+            {
+                $maxcount = $newFilteredMovies.count
+                Write-Verbose "$appTitle count set to max. `nMovie count has been modified to $($newFilteredMovies.count) movies"
             }
-            $randomMovies = Get-Random -InputObject $newFilteredMovies -Count $config.$($app)."Count"
+            $randomMovies = Get-Random -InputObject $newFilteredMovies -Count $appconfig.'Count'
             $movieCounter = 0
 
-            Write-Verbose "Adding tag $($config.($app)."TagName") to $($config.($app)."Count") movies"
-            if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url "$($config.($app)."Url")" -Verbose
+            Write-Verbose "Adding tag $tagname to $($maxcount) movies"
+            if ($logVerbose)
+            {
+                Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $aurl -Verbose
             }
-            else {
-                Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url "$($config.($app)."Url")"
+            else
+            {
+                Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $aurl 
             }
 
-            foreach ($movie in $randomMovies) {
+            foreach ($movie in $randomMovies)
+            {
                 $movieCounter++
-                Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $config.($app)."Count") * 100)
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($movieCounter / $maxcount) * 100)
 
-                if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")){
-                    if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                        Search-Movies -Movie $movie -Url "$($config.($app)."Url")" -Verbose
+                if ($PSCmdlet.ShouldProcess($movie.title, 'Searching for movie'))
+                {
+                    if ($logVerbose)
+                    {
+                        Search-Movies -Movie $movie -Url $aurl -Verbose
                     }
-                    else{
-                        Search-Movies -Movie $movie -Url "$($config.($app)."Url")"
+                    else
+                    {
+                        Search-Movies -Movie $movie -Url $aurl
                     }
                     Write-Output "Manual search kicked off for $($movie.title)"
                 }
             }
         }
 
-        elseif ($filteredMovies.Count -eq 0 -and ([System.Convert]::ToBoolean($config.($app)."Unattended")) -eq $false){
-            if ($config.General.discordWebhook -ne ""){
+        elseif ($filteredMovies.Count -eq 0 -and $rununattended -eq $false)
+        {
+            if ($config.General.discordWebhook -ne '')
+            {
                 Send-DiscordWebhook -App $app -Url $config.General.discordWebhook -Verbose
             }
 
-            else{
-                throw "No movies left to search"
-            }        }
+            else
+            {
+                throw 'No movies left to search'
+            }        
+        }
 
-        else {
-            if ($config.($app)."Count" -eq "max"){
-                $config.($app)."Count" = $filteredMovies.count
+        else
+        {
+            if ($maxcount -eq 'max')
+            {
+                $maxcount = $filteredMovies.count
                 Write-Verbose "Radarr count set to max. `nMovie count has been modified to $($filteredMovies.count) movies"
             }
-            $randomMovies = Get-Random -InputObject $filteredMovies -Count $config.($app)."Count"
+            $randomMovies = Get-Random -InputObject $filteredMovies -Count $maxcount
             $movieCounter = 0
 
-            Write-Verbose "Adding tag $($config.$($app)."TagName") to $($config.($app)."Count") movies"
-            if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url "$($config.($app)."Url")" -Verbose
+            Write-Verbose "Adding tag $tagname to $($maxcount) movies"
+            if ($logVerbose)
+            {
+                Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $aurl -Verbose
             }
 
-            else {
-                Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url "$($config.($app)."Url")"
+            else
+            {
+                Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $aurl
             }
 
-            foreach ($movie in $randomMovies) {
+            foreach ($movie in $randomMovies)
+            {
                 $movieCounter++
-                Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $config.($app)."Count") * 100)
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($movieCounter / $maxcount) * 100)
 
-                if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")){
-                    if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                        Search-Movies -Movie $movie -Url "$($config.($app)."Url")" -Verbose
+                if ($PSCmdlet.ShouldProcess($movie.title, 'Searching for movie'))
+                {
+                    if ($logVerbose)
+                    {
+                        Search-Movies -Movie $movie -Url $aurl -Verbose
                     }
 
-                    else{
-                        Search-Movies -Movie $movie -Url "$($config.($app)."Url")"
+                    else
+                    {
+                        Search-Movies -Movie $movie -Url $aurl
                     }
                     Write-Output "Manual search kicked off for $($movie.title)"
                 }
@@ -172,154 +231,154 @@ foreach ($app in $apps){
         }
     }
 
-    if  ($app -like "*sonarr*"){
-        if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-            Confirm-AppURL -App $app -Url $($config.($app)."Url") -Verbose
-            Confirm-AppConnectivity -App $app -Url $($config.($app)."Url") -Verbose
-        }
+    if ($app -like '*sonarr*')
+    {
 
-        else {
-        Confirm-AppURL -App $app -Url $($config.($app)."Url") -Verbose
-        Confirm-AppConnectivity -App $app -Url $($config.($app)."Url") -Verbose
-        }
-
-        $tagID = Get-TagId -App $app -Url $($config.($app)."Url") -TagName $($config.$($app)."TagName") -Verbose
-
-        $allSeries = Invoke-RestMethod -Uri "$($config.($app)."Url")/api/v3/series" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
-
-        if ($apiStatusCode -notmatch "2\d\d"){
-            throw "Failed to get movie list"
-        }
+        $allSeries = Get-ArrItems($app, $aurl)
 
         Write-Verbose "Retrieved a total of $($allSeries.Count) series"
 
-        if ($config.($app)."SeriesStatus" -eq ""){
-            $filteredSeries = $allSeries | Where-Object {$_.tags -notcontains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.$($app)."Monitored"))}
+        if ($appconfig.'SeriesStatus' -eq '')
+        {
+            $filteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored }
         }
 
-        else {
-            $filteredSeries = $allSeries | Where-Object {$_.tags -notcontains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.$($app)."Monitored")) -and $_.status -eq $config.($app)."SeriesStatus"}
+        else
+        {
+            $filteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'SeriesStatus' }
         }
 
         Write-Verbose "Filtered series down to $($filteredSeries.count) series"
 
-        if ($filteredSeries.Count -eq 0 -and ([System.Convert]::ToBoolean($config.$($app)."Unattended")) -ne $false){
+        if ($filteredSeries.Count -eq 0 -and $rununattended -ne $false)
+        {
 
-            if ($config.($app)."SeriesStatus" -eq ""){
-                $filteredSeriesWithTag = $allSeries | Where-Object {$_.tags -contains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.$($app)."Monitored"))}
+            if ($appconfig.'SeriesStatus' -eq '')
+            {
+                $filteredSeriesWithTag = $allSeries | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appmonitored }
             }
 
-            else {
-                $filteredSeriesWithTag = $allSeries | Where-Object {$_.tags -contains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.$($app)."Monitored")) -and $_.status -eq $config.($app)."SeriesStatus"}
+            else
+            {
+                $filteredSeriesWithTag = $allSeries | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'SeriesStatus' }
             }
 
-            Write-Verbose "Removing tag $($config.$($app)."TagName") from $($filteredSeriesWithTag.Count) series"
+            Write-Verbose "Removing tag $tagname from $($filteredSeriesWithTag.Count) series"
 
-            if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                Remove-Tag -App $app -Url "$($config.($app)."Url")" -Series $filteredSeriesWithTag -tagId $tagID -Verbose
+            if ($logVerbose)
+            {
+                Remove-Tag -App $app -Url $aurl -Series $filteredSeriesWithTag -tagId $tagID -Verbose
             }
 
-            else {
-                Remove-Tag -App $app -Url "$($config.($app)."Url")" -Series $filteredSeriesWithTag -tagId $tagID
+            else
+            {
+                Remove-Tag -App $app -Url $aurl -Series $filteredSeriesWithTag -tagId $tagID
             }
 
-            $allSeries = Invoke-RestMethod -Uri "$($config.($app)."Url")/api/v3/series" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+            $allSeries = Get-ArrItems($app, $aurl)
 
-            if ($config.($app)."SeriesStatus" -eq ""){
-                $newFilteredSeries = $allSeries | Where-Object {$_.tags -notcontains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.$($app)."Monitored"))}
+            if ($appconfig.'SeriesStatus' -eq '')
+            {
+                $newFilteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored }
             }
 
-            else {
-                $newFilteredSeries = $allSeries | Where-Object {$_.tags -notcontains $tagId -and $_.monitored -eq ([System.Convert]::ToBoolean($config.$($app)."Monitored")) -and $_.status -eq $config.($app)."SeriesStatus"}
+            else
+            {
+                $newFilteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'SeriesStatus' }
             }
 
-            if ($config.$($app)."Count" -eq "max"){
-                $config.$($app)."Count" = $newFilteredSeries.count
-                Write-Verbose "$((Get-Culture).TextInfo.ToTitleCase("$app")) count set to max. `nSeries count has been modified to $($newFilteredSeries.count) movies"
+            if ($appconfig.'Count' -eq 'max')
+            {
+                $appconfig.'Count' = $newFilteredSeries.count
+                Write-Verbose "$appTitle count set to max. `nSeries count has been modified to $($newFilteredSeries.count) movies"
             }
-            $randomSeries = Get-Random -InputObject $newFilteredSeries -Count $config.$($app)."Count"
+            $randomSeries = Get-Random -InputObject $newFilteredSeries -Count $appconfig.'Count'
             $seriesCounter = 0
 
-            Write-Verbose "Adding tag $($config.$($app)."TagName") to $($config.($app)."Count") series"
-            if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url "$($config.($app)."Url")" -Verbose
+            Write-Verbose "Adding tag $tagname to $($maxcount) series"
+            if ($logVerbose)
+            {
+                Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url $aurl -Verbose
             }
 
-            else {
-                Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url "$($config.($app)."Url")"
+            else
+            {
+                Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url $aurl
             }
 
-            foreach ($series in $randomSeries) {
+            foreach ($series in $randomSeries)
+            {
                 $seriesCounter++
-                Write-Progress -Activity "Search in Progress" -PercentComplete (($seriesCounter / $config.($app)."Count") * 100)
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($seriesCounter / $maxcount) * 100)
 
-                if ($PSCmdlet.ShouldProcess($series.title, "Searching for series")){
-                    if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                        Search-Series -Series $series -Url "$($config.($app)."Url")" -Verbose
+                if ($PSCmdlet.ShouldProcess($series.title, 'Searching for series'))
+                {
+                    if ($logVerbose)
+                    {
+                        Search-Series -Series $series -Url $aurl -Verbose
                     }
-                    else {
-                        Search-Series -Series $series -Url "$($config.($app)."Url")"
+                    else
+                    {
+                        Search-Series -Series $series -Url $aurl
                     }
                     Write-Output "Manual search kicked off for $($series.title)"
                 }
             }
         }
 
-        elseif ($filteredSeries.Count -eq 0 -and ([System.Convert]::ToBoolean($config.($app)."Unattended")) -eq $false){
-            if ($config.General.discordWebhook -ne ""){
+        elseif ($filteredSeries.Count -eq 0 -and $rununattended -eq $false)
+        {
+            if ($config.General.discordWebhook -ne '')
+            {
                 Send-DiscordWebhook -App $app -Url $config.General.discordWebhook
             }
 
-            else{
-                throw "No series left to search"
+            else
+            {
+                throw 'No series left to search'
             }
         }
 
-        else {
-            if ($config.$($app)."Count" -eq "max"){
-                $config.$($app)."Count" = $filteredSeries.count
-                Write-Verbose "$((Get-Culture).TextInfo.ToTitleCase("$app")) count set to max. `nSeries count has been modified to $($filteredSeries.count) series"
+        else
+        {
+            if ($appconfig.'Count' -eq 'max')
+            {
+                $appconfig.'Count' = $filteredSeries.count
+                Write-Verbose "$appTitle count set to max. `nSeries count has been modified to $($filteredSeries.count) series"
             }
-            $randomSeries = Get-Random -InputObject $filteredSeries -Count $config.$($app)."Count"
+            $randomSeries = Get-Random -InputObject $filteredSeries -Count $appconfig.'Count'
             $seriesCounter = 0
 
-            Write-Verbose "Adding tag $($config.$($app)."TagName") to $($config.($app)."Count") series"
-            if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url "$($config.($app)."Url")" -Verbose
+            Write-Verbose "Adding tag $tagname to $($maxcount) series"
+            if ($logVerbose)
+            {
+                Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url $aurl -Verbose
             }
 
-            else {
-                Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url "$($config.($app)."Url")"
+            else
+            {
+                Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url $aurl
             }
 
-            foreach ($series in $randomSeries) {
+            foreach ($series in $randomSeries)
+            {
                 $seriesCounter++
-                Write-Progress -Activity "Search in Progress" -PercentComplete (($seriesCounter / $config.($app)."Count") * 100)
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($seriesCounter / $maxcount) * 100)
 
-                if ($PSCmdlet.ShouldProcess($series.title, "Searching for series")){
-                    if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent){
-                        Search-Series -Series $series -Url "$($config.($app)."Url")" -Verbose
+                if ($PSCmdlet.ShouldProcess($series.title, 'Searching for series'))
+                {
+                    if ($logVerbose)
+                    {
+                        Search-Series -Series $series -Url $aurl -Verbose
                     }
 
-                    else {
-                        Search-Series -Series $series -Url "$($config.($app)."Url")"
+                    else
+                    {
+                        Search-Series -Series $series -Url $aurl
                     }
                     Write-Output "Manual search kicked off for $($series.title)"
                 }
             }
         }
     }
-
-    if ($app -like "*lidarr*"){
-        throw "Not supported"
-    }
-
-    if ($app -like "*whisparr*"){
-        throw "Not supported"
-    }
-
-    if ($app -like "*prowlarr*"){
-        throw "Really?"
-    }
-
 }
