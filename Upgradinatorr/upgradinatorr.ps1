@@ -2,7 +2,7 @@
 .SYNOPSIS
 This script will kick off manual search on a random number of movies in Radarr and add a specific tag to those movies so they aren"t searched again
 
-I"d like to credit @Roxedus and @austinwbest for their guidance and help making this script possible.
+I'd like to credit @Roxedus and @austinwbest for their guidance and help making this script possible.
 
 .LINK
 https://radarr.video/docs/api/#/
@@ -585,5 +585,4 @@ foreach ($app in $apps) {
             }
         }
     }
-
 }
