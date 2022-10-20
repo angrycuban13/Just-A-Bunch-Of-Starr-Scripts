@@ -58,15 +58,13 @@ function Confirm-AppConnectivity {
 
     if ($app -like '*Radarr*') {
         $apiversion = $api_version_radarr
-    }
-    elseif ($app -like '*Sonarr*') {
+    } elseif ($app -like '*Sonarr*') {
         $apiversion = $api_version_sonarr
     }
     try {
         Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
         Write-Verbose "Connectivity to $((Get-Culture).TextInfo.ToTitleCase("$app")) confirmed"
-    }
-    catch {
+    } catch {
         throw "$((Get-Culture).TextInfo.ToTitleCase("$app")) $_."
     }
 }
@@ -80,8 +78,7 @@ function Confirm-AppURL {
 
     if ($url -notmatch 'https?:\/\/') {
         throw "Your URL for $((Get-Culture).TextInfo.ToTitleCase($app)) is not formatted correctly, it must start with http(s)://"
-    }
-    else {
+    } else {
         Write-Verbose "$((Get-Culture).TextInfo.ToTitleCase("$app")) URL confirmed"
     }
 }
@@ -95,15 +92,13 @@ function Get-ArrItems {
 
     if ($app -like '*Radarr*') {
         $result = $(Invoke-RestMethod -Uri "$aurl/api/$($api_version_radarr)/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode)
-    }
-    elseif ($app -like '*Sonarr*') {
+    } elseif ($app -like '*Sonarr*') {
         $result = $(Invoke-RestMethod -Uri "$aurl/api/$($api_version_sonarr)/series" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode)
     }
 
     if (Confirm-ArrResp($apiStatusCode)) {
         $result
-    }
-    else {
+    } else {
         throw 'Failed to get items'
     }
 }
@@ -117,8 +112,7 @@ function Get-TagId {
 
     if ($app -like '*Radarr*') {
         $apiversion = $api_version_radarr
-    }
-    elseif ($app -like '*Sonarr*') {
+    } elseif ($app -like '*Sonarr*') {
         $apiversion = $api_version_sonarr
     }
 
@@ -142,8 +136,7 @@ function Get-TagId {
 
         $tagNameId
         Write-Verbose "Tag ID $tagNameId confirmed for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
-    }
-    else {
+    } else {
         throw 'Failed to get tags'
     }
 
@@ -195,8 +188,7 @@ function Remove-Tag {
         Invoke-RestMethod -Uri "$($url)/api/$($api_version_sonarr)/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"seriesIds`":[$($series.id -join ',')],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
     }
     if (Confirm-ArrResp($apiStatusCode)) {
-    }
-    else {
+    } else {
         throw 'Failed to remove tag'
     }
 }
@@ -211,8 +203,7 @@ function Search-Movies {
     Invoke-RestMethod -Uri "$($url)/api/$($api_version_radarr)/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}" | Out-Null
     
     if (Confirm-ArrResp($apiStatusCode)) {
-    }
-    else {
+    } else {
         throw "Failed to search for $($movie.title) with statuscode $apiStatusCode"
     }
 }
@@ -226,8 +217,7 @@ function Search-Series {
     Invoke-RestMethod -Uri "$($url)/api/$($api_version_sonarr)/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"name`":`"SeriesSearch`",`"seriesId`":$($series.ID)}" | Out-Null
 
     if (Confirm-ArrResp($apiStatusCode)) {
-    }
-    else {
+    } else {
         throw "Failed to search for $($series.title) with statuscode $apiStatusCode"
     }
 }
@@ -244,8 +234,7 @@ function Send-DiscordWebhook {
     $thumburl = 'https://raw.githubusercontent.com/angrycuban13/Scripts/main/Images/powershell.png'
     if ($app -like '*Radarr*') {
         $description = 'No movies left to search!'
-    }
-    elseif ($app -like '*Sonarr*') {
+    } elseif ($app -like '*Sonarr*') {
         $description = 'No series left to search!'
     }
     $username = 'Upgradinatorr'

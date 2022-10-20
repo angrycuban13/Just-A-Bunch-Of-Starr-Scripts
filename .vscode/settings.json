@@ -6,6 +6,6 @@
     "powershell.integratedConsole.suppressStartupBanner": true,
     "powershell.codeFormatting.openBraceOnSameLine": true,
     "powershell.codeFormatting.autoCorrectAliases": true,
-    "powershell.codeFormatting.preset": "Custom",
+    "powershell.codeFormatting.preset": "OTBS",
     "powershell.codeFormatting.useConstantStrings": true
 }
