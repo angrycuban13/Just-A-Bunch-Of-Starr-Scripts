@@ -20,8 +20,7 @@ param (
     $apps
 )
 
-if ($PSVersionTable.PSVersion.Major -lt 7)
-{
+if ($PSVersionTable.PSVersion.Major -lt 7) {
     throw 'You need at least Powershell 7 to run this script'
 }
 
@@ -33,40 +32,33 @@ $configFile = Join-Path -Path $PSScriptRoot -ChildPath upgradinatorr.conf
 Write-Verbose "Location for config file is $configFile"
 
 #Read the parameters from the config file.
-if (Test-Path $configFile -PathType Leaf)
-{
+if (Test-Path $configFile -PathType Leaf) {
 
     Write-Verbose 'Parsing config file'
     $config = Read-IniFile -File $configFile
 }
 
-else
-{
+else {
     throw 'Could not find config file'
 }
 
 Write-Verbose 'Config file parsed successfully'
 
-foreach ($app in $apps)
-{
+foreach ($app in $apps) {
 
-    if ($app -like '*lidarr*')
-    {
+    if ($app -like '*lidarr*') {
         throw 'Lidarr is not supported'
     }
 
-    if ($app -like '*whisparr*')
-    {
+    if ($app -like '*whisparr*') {
         throw 'Whisparr is not supported'
     }
     
-    if ($app -like '*readarr*')
-    {
+    if ($app -like '*readarr*') {
         throw 'Readarr is not supported'
     }
 
-    if ($app -like '*prowlarr*')
-    {
+    if ($app -like '*prowlarr*') {
         throw 'Really? There is nothing for me to search in Prowlarr.'
     }
 
@@ -90,14 +82,12 @@ foreach ($app in $apps)
     Write-Output "Config - Limit: $maxcount"
     Write-Output "Config - TagName: $tagname"
 
-    if ($logVerbose)
-    {
+    if ($logVerbose) {
         Write-Output 'Verbose logging enabled'
         Confirm-AppURL -App $app -Url $aurl -Verbose
         Confirm-AppConnectivity -App $app -Url $aurl -Verbose
     }
-    else
-    {
+    else {
         Confirm-AppURL -App $app -Url $aurl
         Confirm-AppConnectivity -App $app -Url $aurl
     }
@@ -106,8 +96,7 @@ foreach ($app in $apps)
 
     Write-Verbose "Tag ID $tagID confirmed for $appTitle"
 
-    if ($app -like '*radarr*')
-    {
+    if ($app -like '*radarr*') {
 
         $allMovies = Get-ArrItems($app, $aurl)
 
@@ -117,19 +106,16 @@ foreach ($app in $apps)
 
         Write-Verbose "Filtered movies down to $($filteredMovies.count) movies"
 
-        if ($filteredMovies.Count -eq 0 -and $rununattended -ne $false)
-        {
+        if ($filteredMovies.Count -eq 0 -and $rununattended -ne $false) {
             $moviesWithTag = $allMovies | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'MovieStatus' }
 
             Write-Verbose "Removing tag $tagname from $($moviesWithTag.Count) movies"
 
-            if ($logVerbose)
-            {
+            if ($logVerbose) {
                 Remove-Tag -App $app -Url $aurl -movies $moviesWithTag -tagId $tagID -Verbose
             }
 
-            else
-            {
+            else {
                 Remove-Tag -App $app -Url $aurl -movies $moviesWithTag -tagId $tagID
             }
 
@@ -137,8 +123,7 @@ foreach ($app in $apps)
 
             $newFilteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'MovieStatus' }
 
-            if ($appconfig.'Count' -eq 'max')
-            {
+            if ($appconfig.'Count' -eq 'max') {
                 $maxcount = $newFilteredMovies.count
                 Write-Verbose "$appTitle count set to max. `nMovie count has been modified to $($newFilteredMovies.count) movies"
             }
@@ -146,28 +131,22 @@ foreach ($app in $apps)
             $movieCounter = 0
 
             Write-Verbose "Adding tag $tagname to $($maxcount) movies"
-            if ($logVerbose)
-            {
+            if ($logVerbose) {
                 Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $aurl -Verbose
             }
-            else
-            {
+            else {
                 Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $aurl 
             }
 
-            foreach ($movie in $randomMovies)
-            {
+            foreach ($movie in $randomMovies) {
                 $movieCounter++
                 Write-Progress -Activity 'Search in Progress' -PercentComplete (($movieCounter / $maxcount) * 100)
 
-                if ($PSCmdlet.ShouldProcess($movie.title, 'Searching for movie'))
-                {
-                    if ($logVerbose)
-                    {
+                if ($PSCmdlet.ShouldProcess($movie.title, 'Searching for movie')) {
+                    if ($logVerbose) {
                         Search-Movies -Movie $movie -Url $aurl -Verbose
                     }
-                    else
-                    {
+                    else {
                         Search-Movies -Movie $movie -Url $aurl
                     }
                     Write-Output "Manual search kicked off for $($movie.title)"
@@ -175,23 +154,18 @@ foreach ($app in $apps)
             }
         }
 
-        elseif ($filteredMovies.Count -eq 0 -and $rununattended -eq $false)
-        {
-            if ($config.General.discordWebhook -ne '')
-            {
+        elseif ($filteredMovies.Count -eq 0 -and $rununattended -eq $false) {
+            if ($config.General.discordWebhook -ne '') {
                 Send-DiscordWebhook -App $app -Url $config.General.discordWebhook -Verbose
             }
 
-            else
-            {
+            else {
                 throw 'No movies left to search'
             }        
         }
 
-        else
-        {
-            if ($maxcount -eq 'max')
-            {
+        else {
+            if ($maxcount -eq 'max') {
                 $maxcount = $filteredMovies.count
                 Write-Verbose "Radarr count set to max. `nMovie count has been modified to $($filteredMovies.count) movies"
             }
@@ -199,30 +173,24 @@ foreach ($app in $apps)
             $movieCounter = 0
 
             Write-Verbose "Adding tag $tagname to $($maxcount) movies"
-            if ($logVerbose)
-            {
+            if ($logVerbose) {
                 Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $aurl -Verbose
             }
 
-            else
-            {
+            else {
                 Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $aurl
             }
 
-            foreach ($movie in $randomMovies)
-            {
+            foreach ($movie in $randomMovies) {
                 $movieCounter++
                 Write-Progress -Activity 'Search in Progress' -PercentComplete (($movieCounter / $maxcount) * 100)
 
-                if ($PSCmdlet.ShouldProcess($movie.title, 'Searching for movie'))
-                {
-                    if ($logVerbose)
-                    {
+                if ($PSCmdlet.ShouldProcess($movie.title, 'Searching for movie')) {
+                    if ($logVerbose) {
                         Search-Movies -Movie $movie -Url $aurl -Verbose
                     }
 
-                    else
-                    {
+                    else {
                         Search-Movies -Movie $movie -Url $aurl
                     }
                     Write-Output "Manual search kicked off for $($movie.title)"
@@ -231,64 +199,53 @@ foreach ($app in $apps)
         }
     }
 
-    if ($app -like '*sonarr*')
-    {
+    if ($app -like '*sonarr*') {
 
         $allSeries = Get-ArrItems($app, $aurl)
 
         Write-Verbose "Retrieved a total of $($allSeries.Count) series"
 
-        if ($appconfig.'SeriesStatus' -eq '')
-        {
+        if ($appconfig.'SeriesStatus' -eq '') {
             $filteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored }
         }
 
-        else
-        {
+        else {
             $filteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'SeriesStatus' }
         }
 
         Write-Verbose "Filtered series down to $($filteredSeries.count) series"
 
-        if ($filteredSeries.Count -eq 0 -and $rununattended -ne $false)
-        {
+        if ($filteredSeries.Count -eq 0 -and $rununattended -ne $false) {
 
-            if ($appconfig.'SeriesStatus' -eq '')
-            {
+            if ($appconfig.'SeriesStatus' -eq '') {
                 $filteredSeriesWithTag = $allSeries | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appmonitored }
             }
 
-            else
-            {
+            else {
                 $filteredSeriesWithTag = $allSeries | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'SeriesStatus' }
             }
 
             Write-Verbose "Removing tag $tagname from $($filteredSeriesWithTag.Count) series"
 
-            if ($logVerbose)
-            {
+            if ($logVerbose) {
                 Remove-Tag -App $app -Url $aurl -Series $filteredSeriesWithTag -tagId $tagID -Verbose
             }
 
-            else
-            {
+            else {
                 Remove-Tag -App $app -Url $aurl -Series $filteredSeriesWithTag -tagId $tagID
             }
 
             $allSeries = Get-ArrItems($app, $aurl)
 
-            if ($appconfig.'SeriesStatus' -eq '')
-            {
+            if ($appconfig.'SeriesStatus' -eq '') {
                 $newFilteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored }
             }
 
-            else
-            {
+            else {
                 $newFilteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appmonitored -and $_.status -eq $appconfig.'SeriesStatus' }
             }
 
-            if ($appconfig.'Count' -eq 'max')
-            {
+            if ($appconfig.'Count' -eq 'max') {
                 $appconfig.'Count' = $newFilteredSeries.count
                 Write-Verbose "$appTitle count set to max. `nSeries count has been modified to $($newFilteredSeries.count) movies"
             }
@@ -296,29 +253,23 @@ foreach ($app in $apps)
             $seriesCounter = 0
 
             Write-Verbose "Adding tag $tagname to $($maxcount) series"
-            if ($logVerbose)
-            {
+            if ($logVerbose) {
                 Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url $aurl -Verbose
             }
 
-            else
-            {
+            else {
                 Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url $aurl
             }
 
-            foreach ($series in $randomSeries)
-            {
+            foreach ($series in $randomSeries) {
                 $seriesCounter++
                 Write-Progress -Activity 'Search in Progress' -PercentComplete (($seriesCounter / $maxcount) * 100)
 
-                if ($PSCmdlet.ShouldProcess($series.title, 'Searching for series'))
-                {
-                    if ($logVerbose)
-                    {
+                if ($PSCmdlet.ShouldProcess($series.title, 'Searching for series')) {
+                    if ($logVerbose) {
                         Search-Series -Series $series -Url $aurl -Verbose
                     }
-                    else
-                    {
+                    else {
                         Search-Series -Series $series -Url $aurl
                     }
                     Write-Output "Manual search kicked off for $($series.title)"
@@ -326,23 +277,18 @@ foreach ($app in $apps)
             }
         }
 
-        elseif ($filteredSeries.Count -eq 0 -and $rununattended -eq $false)
-        {
-            if ($config.General.discordWebhook -ne '')
-            {
+        elseif ($filteredSeries.Count -eq 0 -and $rununattended -eq $false) {
+            if ($config.General.discordWebhook -ne '') {
                 Send-DiscordWebhook -App $app -Url $config.General.discordWebhook
             }
 
-            else
-            {
+            else {
                 throw 'No series left to search'
             }
         }
 
-        else
-        {
-            if ($appconfig.'Count' -eq 'max')
-            {
+        else {
+            if ($appconfig.'Count' -eq 'max') {
                 $appconfig.'Count' = $filteredSeries.count
                 Write-Verbose "$appTitle count set to max. `nSeries count has been modified to $($filteredSeries.count) series"
             }
@@ -350,30 +296,24 @@ foreach ($app in $apps)
             $seriesCounter = 0
 
             Write-Verbose "Adding tag $tagname to $($maxcount) series"
-            if ($logVerbose)
-            {
+            if ($logVerbose) {
                 Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url $aurl -Verbose
             }
 
-            else
-            {
+            else {
                 Add-Tag -App $app -Series $randomSeries -TagId $tagID -Url $aurl
             }
 
-            foreach ($series in $randomSeries)
-            {
+            foreach ($series in $randomSeries) {
                 $seriesCounter++
                 Write-Progress -Activity 'Search in Progress' -PercentComplete (($seriesCounter / $maxcount) * 100)
 
-                if ($PSCmdlet.ShouldProcess($series.title, 'Searching for series'))
-                {
-                    if ($logVerbose)
-                    {
+                if ($PSCmdlet.ShouldProcess($series.title, 'Searching for series')) {
+                    if ($logVerbose) {
                         Search-Series -Series $series -Url $aurl -Verbose
                     }
 
-                    else
-                    {
+                    else {
                         Search-Series -Series $series -Url $aurl
                     }
                     Write-Output "Manual search kicked off for $($series.title)"
