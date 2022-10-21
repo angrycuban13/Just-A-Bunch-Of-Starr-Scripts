@@ -3,6 +3,7 @@
 Upgradinatorr is a Powershell script to automate the manual searching of *N* items in your Radarr/Sonarr media library that are not tagged with a Upgradinatorr configured tag.
 
 > **Note**
+> 
 > *N* is the number of items this script will search for, this has the added benefit that you don't hammer your indexers and get banned :)
 
 ## Requirements
@@ -32,13 +33,14 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 ## Config File Attributes
 
 > **Warning**
+> 
 > Do not use any quotation marks within the config file
 
 ### General Configuration Attributes
 
 | Attribute   | Description                                                                                               | Default Value | Allowed Values                      |
 | ----------- | --------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------- |
-| discordWebhook      | Discord webhook to send notifications when no movies movies or series are left to search.                                                                   | "" | alphanumeric string   
+| discordWebhook | Discord webhook to send notifications when no movies movies or series are left to search.              | ""            |alphanumeric string                  |
 
 ### Radarr Configuration Attributes
 
@@ -74,11 +76,37 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 * Run script (see below)
 
 ### Windows
+
 * Coming soon
 
-## `upgradinatorr.ps1` usage
+### Docker Compose
 
-### Linux
+> **Note**
+> 
+> The variables listed below are optional
+
+```yml
+# powershell - https://hub.docker.com/_/microsoft-powershell
+  powershell:
+    container_name: powershell
+    image: mcr.microsoft.com/powershell:latest
+    restart: "no"
+    logging:
+      driver: json-file
+      options:
+        max-file: ${DOCKERLOGGING_MAXFILE}
+        max-size: ${DOCKERLOGGING_MAXSIZE}
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${DOCKERCONFDIR}/powershell:/scripts
+    command: pwsh /scripts/Upgradinatorr/upgradinatorr.ps1 -apps radarr,sonarr
+```
+
+* docker start powershell
+
+### Linux Usage Example
 
 #### One Time - Single App
 
@@ -86,29 +114,22 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
   pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr
 ```
 
-```powershell
-  pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps sonarr
-```
-
-### Scheduled Crontab
-
-```bash
-  0 */6* **  pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr
-  0 */5* **  pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps sonarr
-```
-
 #### One Time - Multiple Apps
-
->**Warning**
-> Does not work in Linux
 
 ```powershell
   pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr,sonarr
 ```
 
-### Verbose Output
+#### Scheduled Crontab
 
-> **Note** 
+```bash
+  0 */6* **  pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr,sonarr
+```
+
+#### Verbose Output
+
+> **Note**
+> 
 > Useful for debugging
 
 ```powershell
