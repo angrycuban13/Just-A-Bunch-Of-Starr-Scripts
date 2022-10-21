@@ -303,6 +303,10 @@ function Send-DiscordWebhook {
     Invoke-RestMethod -Uri $url -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType "application/json"
 }
 
+if ($apps -isnot [array]){
+    Write-Output "Array not detected"
+}
+
 # Specify location of config file.
 $configFile = Join-Path -Path $PSScriptRoot -ChildPath upgradinatorr.conf
 Write-Verbose "Location for config file is $configFile"
@@ -357,22 +361,28 @@ foreach ($app in $apps) {
         "x-api-key" = $appconfig."ApiKey"
     }
 
+    if ($logVerbose) {
+        Write-Output "Verbose logging enabled"
+        Confirm-AppURL -App $app -Url $appUrl -Verbose
+        Confirm-AppConnectivity -App $app -Url $appUrl -Verbose
+        if ($null -eq $tagName){
+            throw "You need to specify a tag name"
+        }
+    }
+    else {
+        Confirm-AppURL -App $app -Url $appUrl
+        Confirm-AppConnectivity -App $app -Url $appUrl
+        if ($null -eq $tagName){
+            throw "You need to specify a tag name"
+        }
+    }
+
     Write-Output "Starting $($appTitle) search"
     Write-Output "Config - URL: $($appUrl)"
     Write-Output "Config - Tag name: $($tagName)"
     Write-Output "Config - Monitored: $($appMonitored)"
     Write-Output "Config - Unattended: $($runUnattended)"
     Write-Output "Config - Movie Search Limit: $($count)"
-
-    if ($logVerbose) {
-        Write-Output "Verbose logging enabled"
-        Confirm-AppURL -App $app -Url $appUrl -Verbose
-        Confirm-AppConnectivity -App $app -Url $appUrl -Verbose
-    }
-    else {
-        Confirm-AppURL -App $app -Url $appUrl
-        Confirm-AppConnectivity -App $app -Url $appUrl
-    }
 
     $tagID = Get-TagId -App $app -Url $appUrl -TagName $tagName
 
