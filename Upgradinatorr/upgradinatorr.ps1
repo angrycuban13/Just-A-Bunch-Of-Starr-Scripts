@@ -64,7 +64,22 @@ function Confirm-ArrResponse {
             $true
         }
         302 {
-            throw "Encountered redirect. Possible missing urlbase?"
+            throw "Encountered redirect. Are you missing a urlbase?"
+        }
+        400 {
+            throw "Invalid Request. Check your application's logs for details"
+        }
+        401 {
+            throw "Unauthorized. Is APIKey valid?"
+        }
+        404 {
+            throw "Not Found. Is URL correct?"
+        }
+        409 {
+            throw "Conflict. Something went wrong"
+        }
+        500 {
+            throw "App responded with Internal Server Error. Check your application's logs for details"
         }
         default {
             throw "Unexpected HTTP status code - $($apiStatusCode)"
