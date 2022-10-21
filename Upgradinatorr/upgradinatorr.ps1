@@ -303,8 +303,18 @@ function Send-DiscordWebhook {
     Invoke-RestMethod -Uri $url -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType "application/json"
 }
 
-if ($apps -isnot [array]){
-    Write-Output "Array not detected"
+if (($apps.GetType()).Name -like "String*"){
+    Write-Verbose "Array not detected"
+    switch -Regex ($apps){
+        ',' {
+            Write-Verbose "Comma detected, splitting values"
+            $apps = $apps -split ","
+        }
+        " " {
+            Write-Output "Space detected, splitting values"
+            $apps = $apps -split " "
+        }
+    }
 }
 
 # Specify location of config file.
@@ -326,26 +336,26 @@ Write-Verbose "Config file parsed successfully"
 foreach ($app in $apps) {
 
     switch -Wildcard ($app) {
-        "*lidarr*" {
+        "lidarr*" {
             throw "Lidarr is not supported"
         }
-        "*whisparr*" {
+        "whisparr*" {
             throw "Whisparr is not supported"
         }
-        "*readarr*" {
+        "readarr*" {
             throw "Readarr is not supported"
         }
-        "*prowlarr*" {
+        "prowlarr*" {
             throw "Really? There is nothing for me to search in Prowlarr"
         }
-        "*sonarr*" {
+        "sonarr*" {
             Write-Output "Valid application specified"
         }
-        "*radarr*" {
+        "radarr*" {
             Write-Output "Valid application specified"
         }
         Default {
-            throw "If you are reading this message..."
+            throw "This error should not be triggered - open a GitHub issue"
         }
     }
 
@@ -365,15 +375,15 @@ foreach ($app in $apps) {
         Write-Output "Verbose logging enabled"
         Confirm-AppURL -App $app -Url $appUrl -Verbose
         Confirm-AppConnectivity -App $app -Url $appUrl -Verbose
-        if ($null -eq $tagName){
-            throw "You need to specify a tag name"
+        if ($tagName -eq ""){
+            throw "Tag name not detected, please specify a tag"
         }
     }
     else {
         Confirm-AppURL -App $app -Url $appUrl
         Confirm-AppConnectivity -App $app -Url $appUrl
-        if ($null -eq $tagName){
-            throw "You need to specify a tag name"
+        if ($tagName -eq ""){
+            throw "Tag name not detected, please specify a tag"
         }
     }
 
@@ -611,3 +621,4 @@ foreach ($app in $apps) {
         }
     }
 }
+
