@@ -392,7 +392,7 @@ foreach ($app in $apps) {
     Write-Output "Config - Tag name: $($tagName)"
     Write-Output "Config - Monitored: $($appMonitored)"
     Write-Output "Config - Unattended: $($runUnattended)"
-    Write-Output "Config - Movie Search Limit: $($count)"
+    Write-Output "Config - $((Get-Culture).TextInfo.ToTitleCase($app)) Limit: $($count)"
 
     $tagID = Get-TagId -App $app -Url $appUrl -TagName $tagName
 
