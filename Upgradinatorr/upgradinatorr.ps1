@@ -187,6 +187,31 @@ function Get-TagId {
 
 }
 
+function Get-QualityProfile {
+    [CmdletBinding()]
+    param (
+        $app,
+        [string[]]$profileName,
+        $url
+    )
+
+    if ($app -like "*Radarr*") {
+        $apiversion = $api_version_radarr
+    }
+    elseif ($app -like "*Sonarr*") {
+        $apiversion = $api_version_sonarr
+    }
+
+    $qualityProfiles = Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/qualityprofile" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+
+    if (Confirm-ArrResponse($apiStatusCode)) {
+        $qualityProfilesIds = $qualityProfiles | Where-Object {$_.name -in $profileName} | Select-Object -ExpandProperty id
+        $qualityProfilesIds
+    }
+    else {
+        throw "Failed to get quality profiles"
+    }
+}
 function Read-IniFile {
     [CmdletBinding()]
     param (
@@ -360,15 +385,21 @@ foreach ($app in $apps) {
     }
 
     $appConfig = $($config.$($app))
-    $appMonitored = $([System.Convert]::ToBoolean($appconfig."Monitored"))
+    $appMonitored = $([System.Convert]::ToBoolean($appConfig."Monitored"))
     $appTitle = $((Get-Culture).TextInfo.ToTitleCase($app))
-    $appUrl = $($appconfig."Url").TrimEnd("/")
-    $count = $($appconfig."Count")
+    $appUrl = $($appConfig."Url").TrimEnd("/")
+    $count = $($appConfig."Count")
     $logVerbose = $($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent)
-    $runUnattended = $([System.Convert]::ToBoolean($appconfig."Unattended"))
-    $tagName = $($appconfig."TagName")
+    $runUnattended = $([System.Convert]::ToBoolean($appConfig."Unattended"))
+    $tagName = $($appConfig."TagName")
     $webHeaders = @{
         "x-api-key" = $appconfig."ApiKey"
+    }
+    if ($($appConfig."ProfileName") -ne ""){
+        $profileName = $($appConfig."ProfileName") -split ","
+    }
+    if ($($appConfig."TagIgnore") -ne ""){
+        $tagIgnore = $($appConfig."TagIgnore") -split ","
     }
 
     if ($logVerbose) {
@@ -389,10 +420,37 @@ foreach ($app in $apps) {
 
     Write-Output "Starting $($appTitle) search"
     Write-Output "Config - URL: $($appUrl)"
-    Write-Output "Config - Tag name: $($tagName)"
     Write-Output "Config - Monitored: $($appMonitored)"
     Write-Output "Config - Unattended: $($runUnattended)"
     Write-Output "Config - $((Get-Culture).TextInfo.ToTitleCase($app)) Limit: $($count)"
+    switch ($profileName){
+        $null {
+            Write-Warning "Config - Profile: No profile specified"
+        }
+        {$profileName.count -eq 1} {
+            Write-Output "Config - Profile: $profileName"
+        }
+    }
+    if ($profileName.count -gt 1){
+        Write-Output "Config - Profile: $($profileName -join ", ")"
+    }
+    Write-Output "Config - Tag name: $($tagName)"
+    switch ($tagIgnore){
+        $null {
+            Write-Warning "Config - Tag ignore list: No tag blacklist specified"
+        }
+        {$tagIgnore.count -eq 1} {
+            Write-Output "Config - Tag ignore list: $tagIgnore"
+        }
+    }
+    if ($tagIgnore.count -gt 1){
+            Write-Output "Config - Tag ignore list: $($tagIgnore -join ", ")"
+    }
+
+    if ($null -ne $profileName){
+        $qualityProfileId = Get-QualityProfile -App $app -Url $appUrl -ProfileName $profileName
+        Write-Output "Quality Profile IDs $($qualityProfileId -join ", ") confirmed for $appTitle"
+    }
 
     $tagID = Get-TagId -App $app -Url $appUrl -TagName $tagName
 
@@ -400,12 +458,25 @@ foreach ($app in $apps) {
 
     if ($app -like "*radarr*") {
         $allMovies = Get-ArrItems -app $app -url $appUrl
+        $allMovies | Select -First 1
 
-        Write-Verbose "Retrieved a total of $($allmovies.Count) movies"
+        Write-Output "Retrieved a total of $($allmovies.Count) movies"
 
-        $filteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."MovieStatus" }
+        if ($null -ne $profileName ) {
+            $filteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."MovieStatus" -and $_.qualityProfileId -notin $qualityProfileId}
+        }
+        elseif ($null -ne $tagIgnore) {
+            //TODO
+        }
+        elseif (($null -ne $tagIgnore) -and ($null -ne $profileName)){
+            //TODO
 
-        Write-Verbose "Filtered movies down to $($filteredMovies.count) movies"
+        }
+        elseif (($null -eq $profileName) -and ($null -eq $tagIgnore)){
+            $filteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."MovieStatus"}
+        }
+
+        Write-Output "Filtered movies down to $($filteredMovies.count) movies"
 
         if ($filteredMovies.Count -eq 0 -and $runUnattended -ne $false) {
             $moviesWithTag = $allMovies | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."MovieStatus" }
@@ -482,7 +553,7 @@ foreach ($app in $apps) {
                 Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $appUrl
             }
 
-            foreach ($movie in $randomMovies) {
+            <#foreach ($movie in $randomMovies) {
                 $movieCounter++
                 Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $count) * 100)
 
@@ -496,7 +567,7 @@ foreach ($app in $apps) {
                     }
                     Write-Output "Manual search kicked off for $($movie.title)"
                 }
-            }
+            }#>
         }
     }
 
@@ -621,4 +692,3 @@ foreach ($app in $apps) {
         }
     }
 }
-
