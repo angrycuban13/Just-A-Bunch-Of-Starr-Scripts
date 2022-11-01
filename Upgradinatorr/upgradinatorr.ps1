@@ -136,7 +136,7 @@ function Confirm-AppURL {
         $url
     )
 
-    if ($url -NotMatch 'https?:\/\/') {
+    if ($url -notmatch 'https?:\/\/') {
         throw "Your URL for $((Get-Culture).TextInfo.ToTitleCase($app)) is not formatted correctly, it must start with http(s)://"
     }
     else {
