@@ -171,9 +171,9 @@ function Get-TagId {
                 "label" = $tagName
             } | ConvertTo-Json
 
-            Invoke-RestMethod -Uri "$($url)/api/$($apiversion)//tag" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -Body $Body -ContentType "application/json" | Out-Null
+            Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/tag" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -Body $Body -ContentType "application/json" | Out-Null
 
-            $updatedTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiversion)//tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+            $updatedTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
 
             $tagNameId = $updatedTagList | Where-Object { $_.label -contains $tagName } | Select-Object -ExpandProperty id
         }
