@@ -449,13 +449,7 @@ foreach ($app in $apps) {
     $runUnattended = $([System.Convert]::ToBoolean($appConfig.'Unattended'))
     $tagName = $($appConfig.'TagName')
     $webHeaders = @{
-        'x-api-key' = $appConfig.'ApiKey'
-    }
-    if ($($appConfig.'ProfileName') -ne '') {
-        $profileName = $($appConfig.'ProfileName') -split ','
-    }
-    if ($($appConfig.'TagIgnore') -ne '') {
-        $tagIgnore = $($appConfig.'TagIgnore') -split ','
+        'x-api-key' = $appconfig.'ApiKey'
     }
 
     if ($logVerbose) {
