@@ -201,6 +201,7 @@ function Get-TagId {
                 'label' = $tagName
             } | ConvertTo-Json
 
+
             Invoke-RestMethod -Uri "$($url)/api/$($apiVersion)/tag" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -Body $Body -ContentType 'application/json' | Out-Null
 
             $updatedTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiVersion)/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
