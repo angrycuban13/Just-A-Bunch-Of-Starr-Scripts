@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-This script will kick off manual search on a random number of movies in Radarr and add a specific tag to those movies so they aren"t searched again
+This script will kick off manual search on a random number of movies in Radarr and add a specific tag to those movies so they aren't searched again
 
 I'd like to credit @Roxedus and @austinwbest for their guidance and help making this script possible.
 
@@ -21,34 +21,44 @@ param (
 )
 
 if ($PSVersionTable.PSVersion.Major -lt 7) {
-    throw "You need at least Powershell 7 to run this script"
+    throw 'You need at least Powershell 7 to run this script'
 }
 
-$api_version_radarr = "v3"
-$api_version_sonarr = "v3"
+$apiVersionRadarr = 'v3'
+$apiVersionSonarr = 'v3'
 function Add-Tag {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [string]
         $app,
+        [Parameter()]
+        [array]
         $movies,
+        [Parameter()]
+        [array]
         $series,
+        [Parameter()]
+        [int]
         $tagId,
+        [Parameter()]
+        [string[]]
         $url
     )
 
-    if ($app -like "*Radarr*") {
-        Invoke-RestMethod -Uri "$($url)/api/$($api_version_radarr)/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
+    if ($app -like '*Radarr*') {
+        Invoke-RestMethod -Uri "$($url)/api/$($apiVersionRadarr)/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"movieIds`":[$($movies.id -join ',')],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
 
         if (-Not (Confirm-ArrResponse -apiStatusCode $apiStatusCode)) {
-            throw "Failed to get tag list"
+            throw 'Failed to get tag list'
         }
     }
 
-    elseif ($app -like "*Sonarr*") {
-        Invoke-RestMethod -Uri "$($url)/api/$($api_version_sonarr)/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"seriesIds`":[$($series.ID -join ",")],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
+    elseif ($app -like '*Sonarr*') {
+        Invoke-RestMethod -Uri "$($url)/api/$($apiVersionSonarr)/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"seriesIds`":[$($series.id -join ',')],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
 
         if (-Not (Confirm-ArrResponse -apiStatusCode $apiStatusCode)) {
-            throw "Failed to get tag list"
+            throw 'Failed to get tag list'
         }
     }
 }
@@ -56,27 +66,29 @@ function Add-Tag {
 function Confirm-ArrResponse {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [int]
         $apiStatusCode
     )
 
     switch -Regex ( $apiStatusCode ) {
-        "2\d\d" {
+        '2\d\d' {
             $true
         }
         302 {
-            throw "Encountered redirect. Are you missing a urlbase?"
+            throw 'Encountered redirect. Are you missing the URL base?'
         }
         400 {
             throw "Invalid Request. Check your application's logs for details"
         }
         401 {
-            throw "Unauthorized. Is APIKey valid?"
+            throw 'Unauthorized. Is APIKey valid?'
         }
         404 {
-            throw "Not Found. Is URL correct?"
+            throw 'Not Found. Is URL correct?'
         }
         409 {
-            throw "Conflict. Something went wrong"
+            throw 'Conflict. Something went wrong'
         }
         500 {
             throw "App responded with Internal Server Error. Check your application's logs for details"
@@ -90,18 +102,22 @@ function Confirm-ArrResponse {
 function Confirm-AppConnectivity {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [string]
         $app,
+        [Parameter()]
+        [string]
         $url
     )
 
-    if ($app -like "*Radarr*") {
-        $apiversion = $api_version_radarr
+    if ($app -like '*Radarr*') {
+        $apiVersion = $apiVersionRadarr
     }
-    elseif ($app -like "*Sonarr*") {
-        $apiversion = $api_version_sonarr
+    elseif ($app -like '*Sonarr*') {
+        $apiVersion = $apiVersionSonarr
     }
     try {
-        Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
+        Invoke-RestMethod -Uri "$($url)/api/$($apiVersion)/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
         Write-Verbose "Connectivity to $((Get-Culture).TextInfo.ToTitleCase("$app")) confirmed"
     }
     catch {
@@ -112,11 +128,15 @@ function Confirm-AppConnectivity {
 function Confirm-AppURL {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [string]
         $app,
+        [Parameter()]
+        [string]
         $url
     )
 
-    if ($url -notmatch "https?:\/\/") {
+    if ($url -notmatch 'https?:\/\/') {
         throw "Your URL for $((Get-Culture).TextInfo.ToTitleCase($app)) is not formatted correctly, it must start with http(s)://"
     }
     else {
@@ -127,40 +147,50 @@ function Confirm-AppURL {
 function Get-ArrItems {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [string]
         $app,
+        [Parameter()]
+        [string]
         $url
     )
 
-    if ($app -like "*Radarr*") {
-        $result = Invoke-RestMethod -Uri "$url/api/$($api_version_radarr)/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+    if ($app -like '*Radarr*') {
+        $result = Invoke-RestMethod -Uri "$url/api/$($apiVersionRadarr)/movie" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
     }
-    elseif ($app -like "*Sonarr*") {
-        $result = Invoke-RestMethod -Uri "$url/api/$($api_version_sonarr)/series" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+    elseif ($app -like '*Sonarr*') {
+        $result = Invoke-RestMethod -Uri "$url/api/$($apiVersionSonarr)/series" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
     }
 
     if (Confirm-ArrResponse -apiStatusCode $apiStatusCode) {
         $result
     }
     else {
-        throw "Failed to get items"
+        throw 'Failed to get items'
     }
 }
 function Get-TagId {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [string]
         $app,
+        [Parameter()]
+        [string]
         $tagName,
+        [Parameter()]
+        [string]
         $url
     )
 
-    if ($app -like "*Radarr*") {
-        $apiversion = $api_version_radarr
+    if ($app -like '*Radarr*') {
+        $apiVersion = $apiVersionRadarr
     }
-    elseif ($app -like "*Sonarr*") {
-        $apiversion = $api_version_sonarr
+    elseif ($app -like '*Sonarr*') {
+        $apiVersion = $apiVersionSonarr
     }
 
-    $currentTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+    $currentTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiVersion)/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
 
     if (Confirm-ArrResponse($apiStatusCode)) {
         $tagNameId = $currentTagList | Where-Object { $_.label -contains $tagName } | Select-Object -ExpandProperty id
@@ -168,12 +198,13 @@ function Get-TagId {
         if ($currentTagList.label -notcontains $tagName) {
 
             $Body = @{
-                "label" = $tagName
+                'label' = $tagName
             } | ConvertTo-Json
 
-            Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/tag" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -Body $Body -ContentType "application/json" | Out-Null
 
-            $updatedTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiversion)/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+            Invoke-RestMethod -Uri "$($url)/api/$($apiVersion)/tag" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -Body $Body -ContentType 'application/json' | Out-Null
+
+            $updatedTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiVersion)/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
 
             $tagNameId = $updatedTagList | Where-Object { $_.label -contains $tagName } | Select-Object -ExpandProperty id
         }
@@ -182,7 +213,7 @@ function Get-TagId {
         Write-Verbose "Tag ID $tagNameId confirmed for $((Get-Culture).TextInfo.ToTitleCase("$app"))"
     }
     else {
-        throw "Failed to get tags"
+        throw 'Failed to get tags'
     }
 
 }
@@ -190,24 +221,26 @@ function Get-TagId {
 function Read-IniFile {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [string]
         $file
     )
 
     $ini = @{}
 
     # Create a default section if none exist in the file. Like a java prop file.
-    $section = "NO_SECTION"
+    $section = 'NO_SECTION'
     $ini[$section] = @{}
 
     switch -regex -file $file {
-        "^\[(.+)\]$" {
+        '^\[(.+)\]$' {
             $section = $matches[1].Trim()
             $ini[$section] = @{}
         }
-        "^\s*([^#].+?)\s*=\s*(.*)" {
+        '^\s*([^#].+?)\s*=\s*(.*)' {
             $name, $value = $matches[1..2]
             # skip comments that start with semicolon:
-            if (!($name.StartsWith(";"))) {
+            if (!($name.StartsWith(';'))) {
                 $ini[$section][$name] = $value.Trim()
             }
         }
@@ -218,36 +251,51 @@ function Read-IniFile {
 function Remove-Tag {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [string]
         $app,
+        [Parameter()]
+        [string]
         $url,
+        [Parameter()]
+        [array]
         $movies,
+        [Parameter()]
+        [array]
         $series,
+        [Parameter()]
+        [int]
         $tagId
     )
 
-    if ($app -like "*Radarr*") {
-        Invoke-RestMethod -Uri "$($url)/api/$($api_version_radarr)/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"movieIds`":[$($movies.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
+    if ($app -like '*Radarr*') {
+
+        Invoke-RestMethod -Uri "$($url)/api/$($apiVersionRadarr)/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"movieIds`":[$($movies.id -join ',')],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
     }
 
-    elseif ($app -like "*Sonarr*") {
-        Invoke-RestMethod -Uri "$($url)/api/$($api_version_sonarr)/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"seriesIds`":[$($series.id -join ",")],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
+    elseif ($app -like '*Sonarr*') {
+        Invoke-RestMethod -Uri "$($url)/api/$($apiVersionSonarr)/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"seriesIds`":[$($series.id -join ',')],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
     }
     if (-Not (Confirm-ArrResponse -apiStatusCode $apiStatusCode)) {
-        throw "Failed to remove tag"
+        throw 'Failed to remove tag'
     }
 }
 
-function Search-Movies {
+function Search-Movie {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [array]
         $movie,
+        [Parameter()]
+        [string]
         $url
     )
 
-    Invoke-RestMethod -Uri "$($url)/api/$($api_version_radarr)/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.ID)]}" | Out-Null
+    Invoke-RestMethod -Uri "$($url)/api/$($apiVersionRadarr)/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"name`":`"MoviesSearch`",`"movieIds`":[$($movie.id)]}" | Out-Null
 
     if (-Not (Confirm-ArrResponse -apiStatusCode $apiStatusCode)) {
-        throw "Failed to search for $($movie.title) with statuscode $apiStatusCode"
+        throw "Failed to search for $($movie.title) with status code $($apiStatusCode)"
     }
 
 }
@@ -255,35 +303,43 @@ function Search-Movies {
 function Search-Series {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [array]
         $series,
+        [Parameter()]
+        [string]
         $url
     )
-    Invoke-RestMethod -Uri "$($url)/api/$($api_version_sonarr)/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType "application/json" -Body "{`"name`":`"SeriesSearch`",`"seriesId`":$($series.ID)}" | Out-Null
+    Invoke-RestMethod -Uri "$($url)/api/$($apiVersionSonarr)/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"name`":`"SeriesSearch`",`"seriesId`":$($series.id)}" | Out-Null
 
     if (-Not (Confirm-ArrResponse -apiStatusCode $apiStatusCode)) {
-        throw "Failed to search for $($series.title) with statuscode $apiStatusCode"
+        throw "Failed to search for $($series.title) with status code $($apiStatusCode)"
     }
 }
 
 function Send-DiscordWebhook {
     [CmdletBinding()]
     param (
+        [Parameter()]
+        [string]
         $app,
+        [Parameter()]
+        [string]
         $url
     )
     [System.Collections.ArrayList]$discordEmbedArray = @()
-    $color = "15548997"
-    $title = "Upgradinatorr"
-    $thumburl = "https://raw.githubusercontent.com/angrycuban13/Scripts/main/Images/powershell.png"
-    if ($app -like "*Radarr*") {
-        $description = "No movies left to search!"
+    $color = '15548997'
+    $title = 'Upgradinatorr'
+    $thumbUrl = 'https://raw.githubusercontent.com/angrycuban13/Scripts/main/Images/powershell.png'
+    if ($app -like '*Radarr*') {
+        $description = 'No movies left to search!'
     }
-    elseif ($app -like "*Sonarr*") {
-        $description = "No series left to search!"
+    elseif ($app -like '*Sonarr*') {
+        $description = 'No series left to search!'
     }
-    $username = "Upgradinatorr"
+    $username = 'Upgradinatorr'
     $thumbnailObject = [PSCustomObject]@{
-        url = $thumburl
+        url = $thumbUrl
     }
 
     $embedObject = [PSCustomObject]@{
@@ -297,22 +353,22 @@ function Send-DiscordWebhook {
     $payload = [PSCustomObject]@{
         embeds     = $discordEmbedArray
         username   = $username
-        avatar_url = $thumburl
+        avatar_url = $thumbUrl
     }
 
-    Invoke-RestMethod -Uri $url -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType "application/json"
+    Invoke-RestMethod -Uri $url -Body ($payload | ConvertTo-Json -Depth 4) -Method Post -ContentType 'application/json' | Out-Null
 }
 
-if (($apps.GetType()).Name -like "String*"){
-    Write-Verbose "Array not detected"
-    switch -Regex ($apps){
+if (($apps.GetType()).Name -like 'String*') {
+    Write-Verbose 'Array not detected'
+    switch -Regex ($apps) {
         ',' {
-            Write-Verbose "Comma detected, splitting values"
-            $apps = $apps -split ","
+            Write-Verbose 'Comma detected, splitting values'
+            $apps = $apps -split ','
         }
-        " " {
-            Write-Output "Space detected, splitting values"
-            $apps = $apps -split " "
+        ' ' {
+            Write-Output 'Space detected, splitting values'
+            $apps = $apps -split ' '
         }
     }
 }
@@ -323,67 +379,67 @@ Write-Verbose "Location for config file is $configFile"
 
 # Read the parameters from the config file.
 if (Test-Path $configFile -PathType Leaf) {
-    Write-Verbose "Parsing config file"
+    Write-Verbose 'Parsing config file'
     $config = Read-IniFile -File $configFile
 }
 
 else {
-    throw "Could not find config file"
+    throw 'Could not find config file'
 }
 
-Write-Verbose "Config file parsed successfully"
+Write-Verbose 'Config file parsed successfully'
 
 foreach ($app in $apps) {
 
     switch -Wildcard ($app) {
-        "lidarr*" {
-            throw "Lidarr is not supported"
+        'lidarr*' {
+            throw 'Lidarr is not supported'
         }
-        "whisparr*" {
-            throw "Whisparr is not supported"
+        'whisparr*' {
+            throw 'Whisparr is not supported'
         }
-        "readarr*" {
-            throw "Readarr is not supported"
+        'readarr*' {
+            throw 'Readarr is not supported'
         }
-        "prowlarr*" {
-            throw "Really? There is nothing for me to search in Prowlarr"
+        'prowlarr*' {
+            throw 'Really? There is nothing for me to search in Prowlarr'
         }
-        "sonarr*" {
-            Write-Output "Valid application specified"
+        'sonarr*' {
+            Write-Output 'Valid application specified'
         }
-        "radarr*" {
-            Write-Output "Valid application specified"
+        'radarr*' {
+            Write-Output 'Valid application specified'
         }
         Default {
-            throw "This error should not be triggered - open a GitHub issue"
+            throw 'This error should not be triggered - open a GitHub issue'
         }
     }
 
     $appConfig = $($config.$($app))
-    $appMonitored = $([System.Convert]::ToBoolean($appconfig."Monitored"))
+    $appMonitored = $([System.Convert]::ToBoolean($appConfig.'Monitored'))
     $appTitle = $((Get-Culture).TextInfo.ToTitleCase($app))
-    $appUrl = $($appconfig."Url").TrimEnd("/")
-    $count = $($appconfig."Count")
-    $logVerbose = $($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent)
-    $runUnattended = $([System.Convert]::ToBoolean($appconfig."Unattended"))
-    $tagName = $($appconfig."TagName")
+    $appUrl = $($appConfig.'Url').TrimEnd('/')
+    $count = $($appConfig.'Count')
+    $logVerbose = $($PSCmdlet.MyInvocation.BoundParameters['Verbose'].IsPresent)
+    $runUnattended = $([System.Convert]::ToBoolean($appConfig.'Unattended'))
+    $tagName = $($appConfig.'TagName')
     $webHeaders = @{
-        "x-api-key" = $appconfig."ApiKey"
+        'x-api-key' = $appConfig.'ApiKey'
     }
 
     if ($logVerbose) {
-        Write-Output "Verbose logging enabled"
+        Write-Output 'Verbose logging enabled'
         Confirm-AppURL -App $app -Url $appUrl -Verbose
         Confirm-AppConnectivity -App $app -Url $appUrl -Verbose
-        if ($tagName -eq ""){
-            throw "Tag name not detected, please specify a tag"
+        if ($tagName -eq '') {
+            throw 'Tag name not detected, please specify a tag'
         }
     }
     else {
         Confirm-AppURL -App $app -Url $appUrl
         Confirm-AppConnectivity -App $app -Url $appUrl
-        if ($tagName -eq ""){
-            throw "Tag name not detected, please specify a tag"
+        if ($tagName -eq '') {
+            throw 'Tag name not detected, please specify a tag'
         }
     }
 
@@ -394,61 +450,65 @@ foreach ($app in $apps) {
     Write-Output "Config - Unattended: $($runUnattended)"
     Write-Output "Config - $((Get-Culture).TextInfo.ToTitleCase($app)) Limit: $($count)"
 
-    $tagID = Get-TagId -App $app -Url $appUrl -TagName $tagName
+    if ($logVerbose) {
+        Write-Output 'Verbose logging enabled'
+        $tagID = Get-TagId -App $app -Url $appUrl -TagName $tagName -Verbose
+    }
+    else {
+        $tagID = Get-TagId -App $app -Url $appUrl -TagName $tagName
+    }
 
-    Write-Verbose "Tag ID $tagID confirmed for $appTitle"
-
-    if ($app -like "*radarr*") {
+    if ($app -like '*radarr*') {
         $allMovies = Get-ArrItems -app $app -url $appUrl
 
-        Write-Verbose "Retrieved a total of $($allmovies.Count) movies"
+        Write-Verbose "Retrieved a total of $($allMovies.Count) movies"
 
-        $filteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."MovieStatus" }
+        $filteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appConfig.'MovieStatus' }
 
         Write-Verbose "Filtered movies down to $($filteredMovies.count) movies"
 
         if ($filteredMovies.Count -eq 0 -and $runUnattended -ne $false) {
-            $moviesWithTag = $allMovies | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."MovieStatus" }
+            $moviesWithTag = $allMovies | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appConfig.'MovieStatus' }
 
             Write-Verbose "Removing tag $tagName from $($moviesWithTag.Count) movies"
 
             if ($logVerbose) {
-                Remove-Tag -App $app -Url $appUrl -movies $moviesWithTag -tagId $tagID -Verbose
+                Remove-Tag -App $app -Url $appUrl -Movies $moviesWithTag -tagId $tagID -Verbose
             }
 
             else {
-                Remove-Tag -App $app -Url $appUrl -movies $moviesWithTag -tagId $tagID
+                Remove-Tag -App $app -Url $appUrl -Movies $moviesWithTag -TagId $tagID
             }
 
-            $allMovies = Get-ArrItems -app $app -url $appUrl
-
-            $newFilteredMovies = $allMovies | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."MovieStatus" }
-
-            if ($appconfig."Count" -eq "max") {
-                $count = $newFilteredMovies.count
-                Write-Verbose "$appTitle count set to max. `nMovie count has been modified to $($newFilteredMovies.count) movies"
+            if ($count -eq 'max') {
+                $count = $filteredMovies.count
+                Write-Verbose "Radarr count set to max. `nMovie count has been modified to $($filteredMovies.count) movies"
             }
-            $randomMovies = Get-Random -InputObject $newFilteredMovies -Count $appconfig."Count"
+
+            $randomMovies = Get-Random -InputObject $moviesWithTag -Count $count
             $movieCounter = 0
 
             Write-Verbose "Adding tag $tagName to $($count) movies"
+
             if ($logVerbose) {
                 Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $appUrl -Verbose
             }
+
             else {
                 Add-Tag -App $app -Movies $randomMovies -TagId $tagID -Url $appUrl
             }
 
             foreach ($movie in $randomMovies) {
                 $movieCounter++
-                Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $count) * 100)
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($movieCounter / $count) * 100)
 
-                if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")) {
+                if ($PSCmdlet.ShouldProcess($movie.title, 'Searching for movie')) {
                     if ($logVerbose) {
-                        Search-Movies -Movie $movie -Url $appUrl -Verbose
+                        Search-Movie -Movie $movie -Url $appUrl -Verbose
                     }
+
                     else {
-                        Search-Movies -Movie $movie -Url $appUrl
+                        Search-Movie -Movie $movie -Url $appUrl
                     }
                     Write-Output "Manual search kicked off for $($movie.title)"
                 }
@@ -456,17 +516,18 @@ foreach ($app in $apps) {
         }
 
         elseif ($filteredMovies.Count -eq 0 -and $runUnattended -eq $false) {
-            if ($config.General.discordWebhook -ne "") {
-                Send-DiscordWebhook -App $app -Url $config.General.discordWebhook -Verbose
+            if ($config.General.discordWebhook -ne '') {
+                Send-DiscordWebhook -App $app -Url $($config.General.discordWebhook) -Verbose
             }
 
             else {
-                throw "No movies left to search"
+                Write-Warning 'No movies left to search'
+                Exit 1
             }
         }
 
         else {
-            if ($count -eq "max") {
+            if ($count -eq 'max') {
                 $count = $filteredMovies.count
                 Write-Verbose "Radarr count set to max. `nMovie count has been modified to $($filteredMovies.count) movies"
             }
@@ -484,15 +545,15 @@ foreach ($app in $apps) {
 
             foreach ($movie in $randomMovies) {
                 $movieCounter++
-                Write-Progress -Activity "Search in Progress" -PercentComplete (($movieCounter / $count) * 100)
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($movieCounter / $count) * 100)
 
-                if ($PSCmdlet.ShouldProcess($movie.title, "Searching for movie")) {
+                if ($PSCmdlet.ShouldProcess($movie.title, 'Searching for movie')) {
                     if ($logVerbose) {
-                        Search-Movies -Movie $movie -Url $appUrl -Verbose
+                        Search-Movie -Movie $movie -Url $appUrl -Verbose
                     }
 
                     else {
-                        Search-Movies -Movie $movie -Url $appUrl
+                        Search-Movie -Movie $movie -Url $appUrl
                     }
                     Write-Output "Manual search kicked off for $($movie.title)"
                 }
@@ -500,55 +561,45 @@ foreach ($app in $apps) {
         }
     }
 
-    if ($app -like "*sonarr*") {
-        $allSeries = Get-ArrItems -app $app -url $appUrl
+    if ($app -like '*sonarr*') {
+        $allSeries = Get-ArrItems -App $app -Url $appUrl
 
         Write-Verbose "Retrieved a total of $($allSeries.Count) series"
 
-        if ($appconfig."SeriesStatus" -eq "") {
+        if ($appConfig.'SeriesStatus' -eq '') {
             $filteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored }
         }
 
         else {
-            $filteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."SeriesStatus" }
+            $filteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appConfig.'SeriesStatus' }
         }
 
         Write-Verbose "Filtered series down to $($filteredSeries.count) series"
 
         if ($filteredSeries.Count -eq 0 -and $runUnattended -ne $false) {
-            if ($appconfig."SeriesStatus" -eq "") {
-                $filteredSeriesWithTag = $allSeries | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appMonitored }
+            if ($appConfig.'SeriesStatus' -eq '') {
+                $seriesWithTag = $allSeries | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appMonitored }
             }
 
             else {
-                $filteredSeriesWithTag = $allSeries | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."SeriesStatus" }
+                $seriesWithTag = $allSeries | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appConfig.'SeriesStatus' }
             }
 
-            Write-Verbose "Removing tag $tagName from $($filteredSeriesWithTag.Count) series"
+            Write-Verbose "Removing tag $tagName from $($seriesWithTag.Count) series"
 
             if ($logVerbose) {
-                Remove-Tag -App $app -Url $appUrl -Series $filteredSeriesWithTag -tagId $tagID -Verbose
+                Remove-Tag -App $app -Url $appUrl -Series $seriesWithTag -tagId $tagID -Verbose
             }
 
             else {
-                Remove-Tag -App $app -Url $appUrl -Series $filteredSeriesWithTag -tagId $tagID
+                Remove-Tag -App $app -Url $appUrl -Series $seriesWithTag -tagId $tagID
             }
 
-            $allSeries = Get-ArrItems -app $app -url $appUrl
-
-            if ($appconfig."SeriesStatus" -eq "") {
-                $newFilteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored }
+            if ($count -eq 'max') {
+                $count = $seriesWithTag.count
+                Write-Verbose "$appTitle count set to max. `nSeries count has been modified to $($seriesWithTag.count) series"
             }
-
-            else {
-                $newFilteredSeries = $allSeries | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appconfig."SeriesStatus" }
-            }
-
-            if ($appconfig."Count" -eq "max") {
-                $appconfig."Count" = $newFilteredSeries.count
-                Write-Verbose "$appTitle count set to max. `nSeries count has been modified to $($newFilteredSeries.count) movies"
-            }
-            $randomSeries = Get-Random -InputObject $newFilteredSeries -Count $appconfig."Count"
+            $randomSeries = Get-Random -InputObject $seriesWithTag -Count $count
             $seriesCounter = 0
 
             Write-Verbose "Adding tag $tagName to $($count) series"
@@ -562,12 +613,13 @@ foreach ($app in $apps) {
 
             foreach ($series in $randomSeries) {
                 $seriesCounter++
-                Write-Progress -Activity "Search in Progress" -PercentComplete (($seriesCounter / $count) * 100)
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($seriesCounter / $count) * 100)
 
-                if ($PSCmdlet.ShouldProcess($series.title, "Searching for series")) {
+                if ($PSCmdlet.ShouldProcess($series.title, 'Searching for series')) {
                     if ($logVerbose) {
                         Search-Series -Series $series -Url $appUrl -Verbose
                     }
+
                     else {
                         Search-Series -Series $series -Url $appUrl
                     }
@@ -577,21 +629,22 @@ foreach ($app in $apps) {
         }
 
         elseif ($filteredSeries.Count -eq 0 -and $runUnattended -eq $false) {
-            if ($config.General.discordWebhook -ne "") {
-                Send-DiscordWebhook -App $app -Url $config.General.discordWebhook
+            if ($config.General.discordWebhook -ne '') {
+                Send-DiscordWebhook -App $app -Url $($config.General.discordWebhook)
             }
 
             else {
-                throw "No series left to search"
+                Write-Warning 'No series left to search'
+                Exit 1
             }
         }
 
         else {
-            if ($appconfig."Count" -eq "max") {
-                $appconfig."Count" = $filteredSeries.count
+            if ($count -eq 'max') {
+                $count = $filteredSeries.count
                 Write-Verbose "$appTitle count set to max. `nSeries count has been modified to $($filteredSeries.count) series"
             }
-            $randomSeries = Get-Random -InputObject $filteredSeries -Count $appconfig."Count"
+            $randomSeries = Get-Random -InputObject $filteredSeries -Count $count
             $seriesCounter = 0
 
             Write-Verbose "Adding tag $tagName to $($count) series"
@@ -605,9 +658,9 @@ foreach ($app in $apps) {
 
             foreach ($series in $randomSeries) {
                 $seriesCounter++
-                Write-Progress -Activity "Search in Progress" -PercentComplete (($seriesCounter / $count) * 100)
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($seriesCounter / $count) * 100)
 
-                if ($PSCmdlet.ShouldProcess($series.title, "Searching for series")) {
+                if ($PSCmdlet.ShouldProcess($series.title, 'Searching for series')) {
                     if ($logVerbose) {
                         Search-Series -Series $series -Url $appUrl -Verbose
                     }
@@ -621,4 +674,3 @@ foreach ($app in $apps) {
         }
     }
 }
-
