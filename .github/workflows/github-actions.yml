@@ -5,9 +5,9 @@ jobs:
     name: Run PSSA
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: lint
-        uses: docker://devblackops/github-action-psscriptanalyzer:2.3.0
+        uses: docker://devblackops/github-action-psscriptanalyzer:2.4.0
         with:
           sendComment: true
           repoToken: ${{ secrets.PSSA_PAT }}
