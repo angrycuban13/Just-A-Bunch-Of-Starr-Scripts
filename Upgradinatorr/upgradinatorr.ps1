@@ -1,5 +1,4 @@
 <#
-BORKED IT
 .SYNOPSIS
 This script will kick off manual search on a random number of movies in Radarr and add a specific tag to those movies so they aren't searched again
 
@@ -12,6 +11,8 @@ https://radarr.video/docs/api/#/
 https://stackoverflow.com/questions/417798/ini-file-parsing-in-powershell
 
 #>
+
+BORKED IT4REEL (
 
 [CmdletBinding(SupportsShouldProcess)]
 param (
