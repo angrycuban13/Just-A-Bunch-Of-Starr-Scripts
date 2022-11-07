@@ -4,6 +4,8 @@ jobs:
   lint:
     name: Run PSSA
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v2
       - name: lint
