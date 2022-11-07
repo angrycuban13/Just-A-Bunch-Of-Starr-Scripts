@@ -10,7 +10,7 @@ jobs:
         uses: docker://devblackops/github-action-psscriptanalyzer:2.3.0
         with:
           sendComment: true
-          repoToken: ${{ secrets.PSSA_TOKEN }}
+          repoToken: ${{ secrets.PSSA_PAT }}
           failOnErrors: true
           failOnWarnings: false
           failOnInfos: false
