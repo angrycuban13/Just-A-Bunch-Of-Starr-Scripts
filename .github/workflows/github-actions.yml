@@ -7,10 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: lint
-        uses: devblackops/github-action-psscriptanalyzer@master
+        uses: docker://devblackops/github-action-psscriptanalyzer:2.3.0
         with:
           sendComment: true
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          repoToken: ${{ secrets.PSSA_PAT }}
           failOnErrors: true
           failOnWarnings: false
           failOnInfos: false
