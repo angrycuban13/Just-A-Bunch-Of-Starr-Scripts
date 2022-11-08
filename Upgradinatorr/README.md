@@ -102,7 +102,7 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 
 > **Note**
 >
-> The variables in the compose below are optional
+> The variables in the Docker Compose below are optional
 
 ```yml
 # powershell - https://hub.docker.com/_/microsoft-powershell
@@ -127,7 +127,7 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 
 > **Warning**
 >
-> This docker compose example will **only run once**. If you want to run it on a schedule you will need to cron it
+> This Docker Compose example will **only run once**. If you want to run it on a schedule you will need to cron it
 
 ### Linux Usage Example
 
