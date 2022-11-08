@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-This script will kick off manual search on a random number of movies in Radarr and add a specific tag to those movies so they aren't searched again
+This script will kick off manual search on a random number of movies in Radarr, episodes in Sonarr, and albums in Lidarr, and add a specific tag to those items so they aren't searched again
 
 I'd like to credit @Roxedus and @austinwbest for their guidance and help making this script possible.
 
@@ -26,6 +26,7 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 
 $apiVersionRadarr = 'v3'
 $apiVersionSonarr = 'v3'
+$apiVersionLidarr = 'v1'
 function Add-Tag {
     [CmdletBinding()]
     param (
@@ -38,6 +39,9 @@ function Add-Tag {
         [Parameter()]
         [array]
         $series,
+        [Parameter()]
+        [array]
+        $artist,
         [Parameter()]
         [int]
         $tagId,
@@ -56,6 +60,14 @@ function Add-Tag {
 
     elseif ($app -like '*Sonarr*') {
         Invoke-RestMethod -Uri "$($url)/api/$($apiVersionSonarr)/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"seriesIds`":[$($series.id -join ',')],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
+
+        if (-Not (Confirm-ArrResponse -apiStatusCode $apiStatusCode)) {
+            throw 'Failed to get tag list'
+        }
+    }
+
+    elseif ($app -like '*Lidarr*') {
+        Invoke-RestMethod -Uri "$($url)/api/$($apiVersionLidarr)/artist/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"artistIds`":[$($artist.id -join ',')],`"tags`":[$tagId],`"applyTags`":`"add`"}" | Out-Null
 
         if (-Not (Confirm-ArrResponse -apiStatusCode $apiStatusCode)) {
             throw 'Failed to get tag list'
@@ -116,6 +128,9 @@ function Confirm-AppConnectivity {
     elseif ($app -like '*Sonarr*') {
         $apiVersion = $apiVersionSonarr
     }
+    elseif ($app -like '*Lidarr*') {
+        $apiVersion = $apiVersionLidarr
+    }
     try {
         Invoke-RestMethod -Uri "$($url)/api/$($apiVersion)/system/status" -Method Get -StatusCodeVariable apiStatusCode -Headers $webHeaders | Out-Null
         Write-Verbose "Connectivity to $((Get-Culture).TextInfo.ToTitleCase("$app")) confirmed"
@@ -161,6 +176,9 @@ function Get-ArrItems {
     elseif ($app -like '*Sonarr*') {
         $result = Invoke-RestMethod -Uri "$url/api/$($apiVersionSonarr)/series" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
     }
+    elseif ($app -like '*Lidarr*') {
+        $result = Invoke-RestMethod -Uri "$url/api/$($apiVersionLidarr)/artist" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
+    }
 
     if (Confirm-ArrResponse -apiStatusCode $apiStatusCode) {
         $result
@@ -188,6 +206,9 @@ function Get-TagId {
     }
     elseif ($app -like '*Sonarr*') {
         $apiVersion = $apiVersionSonarr
+    }
+    elseif ($app -like '*Lidarr*') {
+        $apiVersion = $apiVersionLidarr
     }
 
     $currentTagList = Invoke-RestMethod -Uri "$($url)/api/$($apiVersion)/tag" -Headers $webHeaders -Method Get -StatusCodeVariable apiStatusCode
@@ -264,6 +285,9 @@ function Remove-Tag {
         [array]
         $series,
         [Parameter()]
+        [array]
+        $artist,
+        [Parameter()]
         [int]
         $tagId
     )
@@ -272,9 +296,11 @@ function Remove-Tag {
 
         Invoke-RestMethod -Uri "$($url)/api/$($apiVersionRadarr)/movie/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"movieIds`":[$($movies.id -join ',')],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
     }
-
     elseif ($app -like '*Sonarr*') {
         Invoke-RestMethod -Uri "$($url)/api/$($apiVersionSonarr)/series/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"seriesIds`":[$($series.id -join ',')],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
+    }
+    elseif ($app -like '*Lidarr*') {
+        Invoke-RestMethod -Uri "$($url)/api/$($apiVersionSonarr)/artist/editor" -Headers $webHeaders -Method Put -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"artistIds`":[$($artist.id -join ',')],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}" | Out-Null
     }
     if (-Not (Confirm-ArrResponse -apiStatusCode $apiStatusCode)) {
         throw 'Failed to remove tag'
@@ -317,6 +343,23 @@ function Search-Series {
     }
 }
 
+function Search-Artist {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [array]
+        $artist,
+        [Parameter()]
+        [string]
+        $url
+    )
+    Invoke-RestMethod -Uri "$($url)/api/$($apiVersionLidarr)/command" -Headers $webHeaders -Method Post -StatusCodeVariable apiStatusCode -ContentType 'application/json' -Body "{`"name`":`"ArtistSearch`",`"artistId`":$($artist.id)}" | Out-Null
+
+    if (-Not (Confirm-ArrResponse -apiStatusCode $apiStatusCode)) {
+        throw "Failed to search for $($artist.title) with status code $($apiStatusCode)"
+    }
+}
+
 function Send-DiscordWebhook {
     [CmdletBinding()]
     param (
@@ -336,6 +379,9 @@ function Send-DiscordWebhook {
     }
     elseif ($app -like '*Sonarr*') {
         $description = 'No series left to search!'
+    }
+    elseif ($app -like '*Lidarr*') {
+        $description = 'No artists left to search!'
     }
     $username = 'Upgradinatorr'
     $thumbnailObject = [PSCustomObject]@{
@@ -393,7 +439,7 @@ foreach ($app in $apps) {
 
     switch -Wildcard ($app) {
         'lidarr*' {
-            throw 'Lidarr is not supported'
+            Write-Output 'Valid application specified'
         }
         'whisparr*' {
             throw 'Whisparr is not supported'
@@ -669,6 +715,112 @@ foreach ($app in $apps) {
                         Search-Series -Series $series -Url $appUrl
                     }
                     Write-Output "Manual search kicked off for $($series.title)"
+                }
+            }
+        }
+    }
+
+    if ($app -like '*lidarr*') {
+        $allArtists = Get-ArrItems -App $app -Url $appUrl
+
+        Write-Verbose "Retrieved a total of $($allArtists.Count) artists"
+
+        $filteredArtist = $allArtists | Where-Object { $_.tags -notcontains $tagId -and $_.monitored -eq $appMonitored }
+        Write-Verbose "Filtered artists down to $($filteredArtist.count) artists"
+
+        if ($filteredArtist.Count -eq 0 -and $runUnattended -ne $false) {
+            if ($appConfig.'ArtistStatus' -eq '') {
+                $artistWithTag = $allArtists | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appMonitored }
+            }
+
+            else {
+                $artistWithTag = $allArtists | Where-Object { $_.tags -contains $tagId -and $_.monitored -eq $appMonitored -and $_.status -eq $appConfig.'ArtistStatus' }
+            }
+
+            Write-Verbose "Removing tag $tagName from $($artistWithTag.Count) artists"
+
+            if ($logVerbose) {
+                Remove-Tag -App $app -Url $appUrl -Artist $artistWithTag -tagId $tagID -Verbose
+            }
+
+            else {
+                Remove-Tag -App $app -Url $appUrl -Artist $artistWithTag -tagId $tagID
+            }
+
+            if ($count -eq 'max') {
+                $count = $artistWithTag.count
+                Write-Verbose "$appTitle count set to max. `Artist count has been modified to $($artistWithTag.count) artists"
+            }
+            $randomArtist = Get-Random -InputObject $artistWithTag -Count $count
+            $artistCounter = 0
+
+            Write-Verbose "Adding tag $tagName to $($count) artists"
+            if ($logVerbose) {
+                Add-Tag -App $app -Artist $randomArtist -TagId $tagID -Url $appUrl -Verbose
+            }
+
+            else {
+                Add-Tag -App $app -Artist $randomArtist -TagId $tagID -Url $appUrl
+            }
+
+            foreach ($artist in $randomArtist) {
+                $artistCounter++
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($artistCounter / $count) * 100)
+
+                if ($PSCmdlet.ShouldProcess($artist.title, 'Searching for artists')) {
+                    if ($logVerbose) {
+                        Search-Artist -Artist $artist -Url $appUrl -Verbose
+                    }
+
+                    else {
+                        Search-Artist -Artist $artist -Url $appUrl
+                    }
+                    Write-Output "Manual search kicked off for $($artist.title)"
+                }
+            }
+        }
+
+        elseif ($filteredArtist.Count -eq 0 -and $runUnattended -eq $false) {
+            if ($config.General.discordWebhook -ne '') {
+                Send-DiscordWebhook -App $app -Url $($config.General.discordWebhook)
+            }
+
+            else {
+                Write-Warning 'No artists left to search'
+                Exit 1
+            }
+        }
+
+        else {
+            if ($count -eq 'max') {
+                $count = $filteredArtist.count
+                Write-Verbose "$appTitle count set to max. `Artist count has been modified to $($filteredArtist.count) artists"
+            }
+            $randomArtist = Get-Random -InputObject $filteredArtist -Count $count
+            $artistCounter = 0
+
+            Write-Verbose "Adding tag $tagName to $($count) artists"
+            if ($logVerbose) {
+                Add-Tag -App $app -Artist $randomArtist -TagId $tagID -Url $appUrl -Verbose
+            }
+
+            else {
+                Add-Tag -App $app -Artist $randomArtist -TagId $tagID -Url $appUrl
+            }
+
+            foreach ($artist in $randomArtist) {
+                $artistCounter++
+                Write-Progress -Activity 'Search in Progress' -PercentComplete (($artistCounter / $count) * 100)
+
+                if ($PSCmdlet.ShouldProcess($artist.title, 'Searching for artists')) {
+                    if ($logVerbose) {
+                        Search-Artist -Artist $artist -Url $appUrl -Verbose
+                    }
+
+                    else {
+                        Search-Artist -Artist $artist -Url $appUrl
+                    }
+                    Write-Output "Manual search kicked off for $($artist.title)"
                 }
             }
         }
