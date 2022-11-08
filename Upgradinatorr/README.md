@@ -3,7 +3,7 @@
 Upgradinatorr is a Powershell script to automate the manual searching of *N* items in your Radarr/Sonarr media library that are not tagged with a Upgradinatorr configured tag.
 
 > **Note**
-> 
+>
 > *N* is the number of items this script will search for, this has the added benefit that you don't hammer your indexers and get banned :)
 
 ## Requirements
@@ -33,7 +33,7 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 ## Config File Attributes
 
 > **Warning**
-> 
+>
 > Do not use any quotation marks within the config file
 
 ### General Configuration Attributes
@@ -54,11 +54,23 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 | unattended  | Run the script in an infinite loop and search the library forever and  ever until the end of the Internet | false         | boolean (true/false)                |
 | url         | Radarr URL starting with "http(s)://" including baseurl and  port if required                             | ""            | URL                                 |
 
-### Sonarr
+### Sonarr Configuration Attributes
 
 | Attribute    | Description                                                                                               | Default Value | Allowed Values                      |
 | ------------ | --------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------- |
 | apiKey       | Sonarr API Key from Settings => General                                                                   | ""            | alphanumeric string                 |
+| count        | Number of Series to be searched                                                                           | 5             | integer > 0                         |
+| monitored    | Search Monitored Series or Unmonitored Series                                                             | true          | boolean (true/false)                |
+| seriesStatus | Minimum Series Status to search                                                                           | ""            | `continuing`   `upcoming`   `ended` |
+| tagName      | Name of the Tag that will be applied to the Series after they are  searched.                              | ""            | alphanumeric string                 |
+| unattended   | Run the script in an infinite loop and search the library forever and  ever until the end of the Internet | false         | boolean (true/false)                |
+| url          | Sonarr URL starting with "http(s)://" including baseurl and  port if required                             | ""            | URL                                 |
+
+### Lidarr Configuration Attributes
+
+| Attribute    | Description                                                                                               | Default Value | Allowed Values                      |
+| ------------ | --------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------- |
+| apiKey       | Lidarr API Key from Settings => General                                                                   | ""            | alphanumeric string                 |
 | count        | Number of Series to be searched                                                                           | 5             | integer > 0                         |
 | monitored    | Search Monitored Series or Unmonitored Series                                                             | true          | boolean (true/false)                |
 | seriesStatus | Minimum Series Status to search                                                                           | ""            | `continuing`   `upcoming`   `ended` |
@@ -71,19 +83,27 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 ### Linux
 
 * Clone repo: `git clone "https://github.com/angrycuban13/Scripts.git" "/path/to/repo/clone/location/"`
+  * Alternatively you can copy and paste the script contents by clicking on this [link](https://raw.githubusercontent.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/main/Upgradinatorr/upgradinatorr.ps1)
 * Create config from the example: `cp /path/to/repo/clone/location/upgradinatorr-example.conf /path/to/repo/clone/location/upgradinatorr.conf`
+  * Alternatively you can copy/paste the config file by clicking on this [link](https://raw.githubusercontent.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/main/Upgradinatorr/upgradinatorr-example.conf)
 * Update the config file and enter the parameters in `upgradinatorr.conf`
-* Run script (see below)
+* Run script - [Linux](#Linux-Usage-Example)
 
 ### Windows
 
-* Coming soon
+* Clone repo: `git clone "https://github.com/angrycuban13/Scripts.git" "/path/to/repo/clone/location/"`
+  * Alternatively you can copy and paste the script contents by clicking on this [link](https://raw.githubusercontent.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/main/Upgradinatorr/upgradinatorr.ps1)
+* Create config from the example: `cp /path/to/repo/clone/location/upgradinatorr-example.conf /path/to/repo/clone/location/upgradinatorr.conf`
+  * Alternatively you can copy/paste the config file by clicking on this [link](https://raw.githubusercontent.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/main/Upgradinatorr/upgradinatorr-example.conf)
+* Update the config file and enter the parameters in `upgradinatorr.conf`
+* Run script (see below)
 
 ### Docker Compose
 
 > **Note**
-> 
-> The variables listed below are optional
+>
+> The variables in the compose below are optional
+
 
 ```yml
 # powershell - https://hub.docker.com/_/microsoft-powershell
@@ -106,18 +126,22 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 
 * docker start powershell
 
+> **Warning**
+>
+> The example below will only run once, if you want to run it on a schedule you will need to cron it
+
 ### Linux Usage Example
 
-#### One Time - Single App
+#### One Time - Single App - Linux
 
 ```powershell
   pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr
 ```
 
-#### One Time - Multiple Apps
+#### One Time - Multiple Apps - Linux
 
 ```powershell
-  pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr,sonarr
+  pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr,sonarr,lidarr
 ```
 
 #### Scheduled Crontab
@@ -126,10 +150,40 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
   0 */6* **  pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr,sonarr
 ```
 
-#### Verbose Output
+### Windows Usage Example
+
+#### One Time - Single App - Windows
+
+```powershell
+  pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr
+```
+
+#### One Time - Multiple Apps - Windows
+
+```powershell
+  pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -apps radarr,sonarr,lidarr
+```
+
+#### Scheduled Task
+
+* Open `Task Scheduler`
+* Create new task
+* Under the `General` tab
+  * Give your task a name, e.g "Upgradinatorr Script"
+  * Set your security options appropiately
+    * Don't run your script as the `SYSTEM` account...
+    * There's no need to run the script with the highest privileges either
+* Under the `Triggers` tab
+  * Create a schedule of your choice
+* Under the `Actions` tab
+  * Action: `Start a program`
+  * Program/script: `/path/to/pwsh`
+  * Add arguments (optional): `-File /path/to/upgradinatorr/file`
+
+### Verbose Output
 
 > **Note**
-> 
+>
 > Useful for debugging
 
 ```powershell
