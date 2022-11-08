@@ -123,7 +123,9 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
     command: pwsh /scripts/Upgradinatorr/upgradinatorr.ps1 -apps radarr,sonarr
 ```
 
-* docker start powershell
+```bash
+    docker start powershell
+```
 
 > **Warning**
 >
