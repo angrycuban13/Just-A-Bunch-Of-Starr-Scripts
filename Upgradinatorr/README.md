@@ -127,7 +127,7 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 
 > **Warning**
 >
-> The example below will only run once, if you want to run it on a schedule you will need to cron it
+> This docker compose example will **only run once**. If you want to run it on a schedule you will need to cron it
 
 ### Linux Usage Example
 
