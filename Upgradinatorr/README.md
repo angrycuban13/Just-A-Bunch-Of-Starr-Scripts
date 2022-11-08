@@ -104,7 +104,6 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 >
 > The variables in the compose below are optional
 
-
 ```yml
 # powershell - https://hub.docker.com/_/microsoft-powershell
   powershell:
