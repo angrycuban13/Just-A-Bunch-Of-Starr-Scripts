@@ -98,6 +98,19 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
 * Update the config file and enter the parameters in `upgradinatorr.conf`
 * Run script (see below)
 
+### Unraid
+> Requires Powershell 7 plugin via NerdTools (Unraid 6.11.5) and User Scripts plugin
+* Install NerdTools from CA, then install powershell-7.2.7 in NerdTools Plugin Menu
+* Install User Scripts plugin from CA
+* Save the [Upgradinatorr](https://raw.githubusercontent.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/main/Upgradinatorr/upgradinatorr.ps1) script somewhere easy to maintain (Recommended on your appdata share) ie, `/mnt/user/appdata/scripts` save as `upgradinatorr.ps1`.
+* Save the [config](https://raw.githubusercontent.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/main/Upgradinatorr/upgradinatorr-example.conf) in the same directory as the Upgradinatorr script. Save as `upgradinatorr.conf`.
+* Update the config file and enter the parameters in `upgradinatorr.conf`
+> Upgradinatorr uses app name arguments. So whatever you have setup in the config is what argument you'll use in the script. For instance if you have Radarr and Radarr4K in your config, your arguments will be `-apps radarr,radarr4k` respectively
+* Go to Plugins / Settings > User Scripts and click Add New Script. Name it `Upgradinatorr`
+* Click the gear icon next to Upgradinatorr and Edit Script
+* Paste `pwsh /mnt/user/appdata/scripts/upgradinatorr.ps1 -apps radarr` into the script. Adjust the app names as required for your setup (radarr,radarr4k,sonarr,sonarr4k,lidarr)
+* After that, you can click Run Script, Run in Background or set up to run the script on a schedule by clicking `Schedule Disabled` and setting it to whatever you prefer. If you'd like the script to run every 6 hours, select Custom, and the cron will be `0 */6 * * *` where you can replace the 6 with whatever interval you'd like.
+
 ### Docker Compose
 
 > **Note**
