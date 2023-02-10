@@ -20,9 +20,7 @@ param (
     $apps
 )
 
-if ($PSVersionTable.PSVersion.Major -lt 7) {
-    throw 'You need at least Powershell 7 to run this script'
-}
+#Requires -Version 7
 
 $apiVersionRadarr = 'v3'
 $apiVersionSonarr = 'v3'
@@ -568,7 +566,6 @@ foreach ($app in $apps) {
 
             else {
                 Write-Warning 'No movies left to search'
-                Exit 1
             }
         }
 
