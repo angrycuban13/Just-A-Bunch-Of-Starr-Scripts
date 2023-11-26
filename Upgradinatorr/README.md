@@ -1,14 +1,18 @@
 # README
 
-Upgradinatorr is a Powershell script to automate the manual searching of *N* items in your Radarr/Sonarr media library that are not tagged with a Upgradinatorr configured tag.
+Upgradinatorr is a Powershell script to automate the manual searching of *N* items in your Radarr, Sonarr or Lidarr media library that are not tagged with a Upgradinatorr configured tag.
 
-> **Note**
->
+> [!NOTE]
 > *N* is the number of items this script will search for, this has the added benefit that you don't hammer your indexers and get banned :)
+
+## Why should I use this script?
+
+* Let's say you recently started using TRaSH Guides. Now you are wondering if the releases Radarr, Sonarr or Lidarr have grabbed in the past are the highest scored releases per the Custom Format scoring you've selected and you have 1000+ media items. Manually searching and keeping track of what was searched is tedious and boring. This script helps with that!
 
 ## Requirements
 
-* Powershell 7: To install Powershell 7, follow [this link](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7.2)
+* Powershell 7
+  * To install Powershell 7, follow [this link](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7.2).
 * Radarr
   * Radarr => Settings => Profiles => Quality Profile => Upgrade Until Custom Format Score
     * `Upgrade Until Custom Format Score` set to at least `10000`
@@ -20,9 +24,7 @@ Upgradinatorr is a Powershell script to automate the manual searching of *N* ite
       * `Upgrade Until Custom Format Score` set to at least `10000`
 * *Optional*: Using [TRaSH Guides](https://trash-guides.info/)
 
-## Why should I use this script?
 
-* Let's say you recently started using TRaSH Guides. Now you are wondering if the releases Radarr has grabbed in the past are the highest scored releases per the Custom Format scoring and you have 1000+ movies. Manually searching and keeping track of what was searched is tedious and boring. This script helps with that!
 
 ## Script Arguments
 
