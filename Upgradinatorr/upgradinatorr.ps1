@@ -1402,7 +1402,7 @@ foreach ($app in $apps) {
                     $discordMessageParams = @{
                         MessageTitle       = "Upgradinatorr - $app"
                         MessageDescription = $messageDescription
-                        EmbedColor         = 'Green'
+                        EmbedColor         = 'Red'
                         ThumbURL           = 'https://gh.notifiarr.com/images/icons/radarr.png'
                         URL                = $discordWebhook
                         Username           = "Upgradinatorr - $app"
@@ -1583,7 +1583,7 @@ foreach ($app in $apps) {
                     $discordMessageParams = @{
                         MessageTitle       = "Upgradinatorr - $app"
                         MessageDescription = $messageDescription
-                        EmbedColor         = 'Green'
+                        EmbedColor         = 'Red'
                         ThumbURL           = 'https://gh.notifiarr.com/images/icons/sonarr.png'
                         URL                = $discordWebhook
                         Username           = "Upgradinatorr - $app"
