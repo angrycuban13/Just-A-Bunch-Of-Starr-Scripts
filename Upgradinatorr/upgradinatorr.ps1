@@ -26,6 +26,10 @@ None. The script initiates a manual search for upgrades and does not return any 
 
 .NOTES
 The script throws an error if the API request fails.
+
+Special thanks go to the following people for their contributions and guidance to this script:
+- Roxedus
+- austinwbest
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
