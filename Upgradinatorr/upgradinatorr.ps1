@@ -1474,7 +1474,7 @@ foreach ($app in $apps) {
 
             Search-Media -App $app -ApiKey $apiKey -ApiVersion $apiVersion -Media $mediaToSearch -Url $url
 
-            Write-Output "Adding tag `"$tagName`" to $($mediaToSearch.Count) movies in $app"
+            Write-Output "Adding tag name `"$tagName`" to $($mediaToSearch.Count) movies in $app"
 
             Add-TagToMedia -App $app -ApiKey $apiKey -ApiVersion $apiVersion -Media $mediaToSearch -TagId $tagId -Url $url
 
@@ -1665,7 +1665,7 @@ foreach ($app in $apps) {
                 Search-Media -App $app -ApiKey $apiKey -ApiVersion $apiVersion -Media $seriesToSearch -Url $url
             }
 
-            Write-Output "Adding tag `"$tagName`" to $($mediaToSearch.Count) series in $app"
+            Write-Output "Adding tag name  `"$tagName`" to $($mediaToSearch.Count) series in $app"
 
             Add-TagToMedia -App $app -ApiKey $apiKey -ApiVersion $apiVersion -Media $mediaToSearch -TagId $tagId -Url $url
 
