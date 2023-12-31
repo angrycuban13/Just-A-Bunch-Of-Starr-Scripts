@@ -1410,7 +1410,7 @@ foreach ($app in $apps) {
 
                     Send-DiscordMessage @discordMessageParams
                 }
-                throw 'No movies left to search, is the ignore tag applied to all movies?'
+                Write-Output 'No movies left to search, is the ignore tag applied to all movies?'
             }
 
             else {
@@ -1466,7 +1466,7 @@ foreach ($app in $apps) {
 
                 Send-DiscordMessage @discordMessageParams
             }
-            throw 'No movies left to search'
+            Write-Output 'No movies left to search'
         }
 
         else {
@@ -1591,7 +1591,7 @@ foreach ($app in $apps) {
 
                     Send-DiscordMessage @discordMessageParams
                 }
-                throw 'No series left to search, is the ignore tag applied to all series?'
+                Write-Output 'No series left to search, is the ignore tag applied to all series?'
             }
 
             else {
@@ -1654,7 +1654,7 @@ foreach ($app in $apps) {
                 Send-DiscordMessage @discordMessageParams
             }
 
-            throw 'No series left to search'
+            Write-Output 'No series left to search'
         }
 
         else {
