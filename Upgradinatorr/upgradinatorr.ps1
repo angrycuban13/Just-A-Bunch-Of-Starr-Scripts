@@ -1183,8 +1183,13 @@ if ($PSBoundParameters.ContainsKey('ConfigFile')) {
 }
 
 else {
-    Write-Verbose 'Reading config file'
-    $config = Read-ConfigFile -File $configFile
+    if (-Not (Test-Path $configFile)) {
+        throw 'Config file not found'
+    }
+    else {
+        Write-Verbose 'Reading config file'
+        $config = Read-ConfigFile -File $configFile
+    }
 }
 
 foreach ($app in $apps) {
