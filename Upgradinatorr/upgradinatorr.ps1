@@ -104,7 +104,7 @@ function Add-TagToMedia {
         $Media,
 
         [Parameter(Mandatory = $true, Position = 4)]
-        [string]
+        [int64]
         $TagId,
 
         [Parameter(Mandatory = $true, Position = 5)]
