@@ -104,7 +104,7 @@ function Add-TagToMedia {
         $Media,
 
         [Parameter(Mandatory = $true, Position = 4)]
-        [string]
+        [int64]
         $TagId,
 
         [Parameter(Mandatory = $true, Position = 5)]
@@ -1436,7 +1436,7 @@ foreach ($app in $apps) {
 
                 if ($sendDiscordNotification) {
                     $movieTitleList = $mediaToSearch.title | ForEach-Object { "* $_" }
-                    $messageDescription = "Upgradinatorr kicked off search for: `n $($movieTitleList -join `"`n`")"
+                    $messageDescription = "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
 
                     if ($messageDescription.Length -gt 4096) {
                         Write-Warning 'Discord only allows 4096 characters in the description, sending generic message without movie titles list'
@@ -1455,6 +1455,8 @@ foreach ($app in $apps) {
 
                     Send-DiscordMessage @discordMessageParams
                 }
+
+                Write-Host "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
             }
         }
 
@@ -1485,7 +1487,7 @@ foreach ($app in $apps) {
 
             if ($sendDiscordNotification) {
                 $movieTitleList = $mediaToSearch.title | ForEach-Object { "* $_" }
-                $messageDescription = "Upgradinatorr kicked off search for: `n $($movieTitleList -join `"`n`")"
+                $messageDescription = "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
 
                 if ($messageDescription.Length -gt 4096) {
                     Write-Warning 'Discord only allows 4096 characters in the description, sending generic message without movie titles list'
@@ -1504,6 +1506,9 @@ foreach ($app in $apps) {
 
                 Send-DiscordMessage @discordMessageParams
             }
+
+            Write-Host "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
+
         }
     }
 
@@ -1622,7 +1627,7 @@ foreach ($app in $apps) {
 
                 if ($sendDiscordNotification) {
                     $seriesTitleList = $mediaToSearch.title | ForEach-Object { "* $_" }
-                    $messageDescription = "Upgradinatorr kicked off search for: `n $($seriesTitleList -join `"`n`")"
+                    $messageDescription = "Upgradinatorr kicked off search for: `n$($seriesTitleList -join `"`n`")"
 
                     if ($messageDescription.Length -gt 4096) {
                         Write-Warning 'Discord only allows 4096 characters in the description, sending generic message without series titles list'
@@ -1641,6 +1646,9 @@ foreach ($app in $apps) {
 
                     Send-DiscordMessage @discordMessageParams
                 }
+
+                Write-Host "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
+
             }
 
         }
@@ -1676,7 +1684,7 @@ foreach ($app in $apps) {
 
             if ($sendDiscordNotification) {
                 $seriesTitleList = $mediaToSearch.title | ForEach-Object { "* $_" }
-                $messageDescription = "Upgradinatorr kicked off search for: `n $($seriesTitleList -join `"`n`")"
+                $messageDescription = "Upgradinatorr kicked off search for: `n$($seriesTitleList -join `"`n`")"
 
                 if ($messageDescription.Length -gt 4096) {
                     Write-Warning 'Discord only allows 4096 characters in the description, sending generic message without series titles list'
@@ -1695,10 +1703,13 @@ foreach ($app in $apps) {
 
                 Send-DiscordMessage @discordMessageParams
             }
+
+            Write-Host "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
+
         }
     }
 
     if ($app -like 'lidarr*') {
         Write-Output 'To do lol'
-    }
+    }#>
 }
