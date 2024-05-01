@@ -30,7 +30,7 @@ I have only tested this script with sending to a Kindle, but if you have a diffe
 
 1. Navigate to Automation > Scripts.
 1. Click on `Create New Script` and give it an easily recognizable name (e.g. `Send Readarr Books to Kindle`).
-1. Copy/paste the script contents into the code editor and click `Save`.
+1. Copy/paste the [script contents](https://raw.githubusercontent.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/main/Send-ReadarrBooksToKindle/Send-ReadarrBooksToKindle.ps1) into the code editor and click `Save`.
 
 #### API Endpoint
 
