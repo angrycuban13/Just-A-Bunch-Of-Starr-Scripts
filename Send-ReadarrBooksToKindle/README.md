@@ -35,14 +35,12 @@ I have only tested this script with sending to a Kindle, but if you have a diffe
 #### API Endpoint
 
 1. Navigate to APIs > Endpoints
-1. Click on `Create New Endpoint`.
+2. Click on `Create New Endpoint`.
    1. On the `URL` field, give it an URL of your choice (e.g. `readarr`).
    1. On the `Method` field, make sure to add `POST`.
       1. I recommend you leave `GET` enabled as well so you can debug as needed.
-1. After the endpoint has been created, click on the `Edit` button and copy/paste the following into the code editor
+3. After the endpoint has been created, click on the `Edit` button and copy/paste the following into the code editor
 
-    > [!IMPORTANT]
-    > Make sure to update `YOUR-SCRIPT-NAME-HERE` with the name of the script from the [previous step](#script)
 
     ```powershell
     $readarrWebhookData = ConvertFrom-Json -InputObject $body
@@ -54,7 +52,10 @@ I have only tested this script with sending to a Kindle, but if you have a diffe
     Invoke-PSUScript -Name 'YOUR-SCRIPT-NAME-HERE' -Author $bookAuthor -BookTitle $bookTitle -BookFilePath $bookFilePath -Wait
     ```
 
-1. Click `Save`
+> [!IMPORTANT]
+> Make sure to update `YOUR-SCRIPT-NAME-HERE` with the name of the script from the [previous step](#script)
+
+4. Click `Save`
 
 #### Variables
 
