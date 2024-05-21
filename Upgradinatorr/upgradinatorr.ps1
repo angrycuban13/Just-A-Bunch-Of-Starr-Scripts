@@ -1456,7 +1456,7 @@ foreach ($app in $apps) {
                     Send-DiscordMessage @discordMessageParams
                 }
 
-                Write-Host "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
+                Write-Output "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
             }
         }
 
@@ -1507,7 +1507,7 @@ foreach ($app in $apps) {
                 Send-DiscordMessage @discordMessageParams
             }
 
-            Write-Host "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
+            Write-Output "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
 
         }
     }
@@ -1585,9 +1585,8 @@ foreach ($app in $apps) {
                 Write-Verbose "Filtered series to $($filteredSeries.Count) series from $app"
             }
 
-            if ($filteredMovies.Count -eq 0) {
+            if ($filteredSeries.Count -eq 0) {
                 if ($sendDiscordNotification) {
-                    $movieTitleList = $mediaToSearch.title | ForEach-Object { "* $_" }
                     $messageDescription = "No series left to search, is the ignore tag applied to all series?`n* Tag Name: `"$ignoreTag`"`n* Tag ID: `"$($ignoreTagId)`" "
 
                     $discordMessageParams = @{
@@ -1647,7 +1646,7 @@ foreach ($app in $apps) {
                     Send-DiscordMessage @discordMessageParams
                 }
 
-                Write-Host "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
+                Write-Output "Upgradinatorr kicked off search for: `n$($seriesTitleList -join `"`n`")"
 
             }
 
@@ -1678,7 +1677,7 @@ foreach ($app in $apps) {
                 Search-Media -App $app -ApiKey $apiKey -ApiVersion $apiVersion -Media $seriesToSearch -Url $url
             }
 
-            Write-Output "Adding tag name  `"$tagName`" to $($mediaToSearch.Count) series in $app"
+            Write-Output "Adding tag name `"$tagName`" to $($mediaToSearch.Count) series in $app"
 
             Add-TagToMedia -App $app -ApiKey $apiKey -ApiVersion $apiVersion -Media $mediaToSearch -TagId $tagId -Url $url
 
@@ -1704,8 +1703,7 @@ foreach ($app in $apps) {
                 Send-DiscordMessage @discordMessageParams
             }
 
-            Write-Host "Upgradinatorr kicked off search for: `n$($movieTitleList -join `"`n`")"
-
+            Write-Output "Upgradinatorr kicked off search for: `n$($seriesTitleList -join `"`n`")"
         }
     }
 
