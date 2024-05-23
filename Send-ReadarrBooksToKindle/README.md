@@ -43,13 +43,21 @@ I have only tested this script with sending to a Kindle, but if you have a diffe
 
 
     ```powershell
+    
+    # Convert JSON to PSObject
     $readarrWebhookData = ConvertFrom-Json -InputObject $body
 
+    if ($readarrWebhookData.EventType -eq "Test") {
+        Write-Host "Readarr sent a test"
+    }
+
+    else {
     $bookAuthor = $readarrWebhookData.author.name
     $bookTitle = $readarrWebhookData.book.title
     $bookFilePath = $readarrWebhookData.bookfiles.path
 
     Invoke-PSUScript -Name 'YOUR-SCRIPT-NAME-HERE' -Author $bookAuthor -BookTitle $bookTitle -BookFilePath $bookFilePath -Wait
+    }
     ```
 
 > [!IMPORTANT]
