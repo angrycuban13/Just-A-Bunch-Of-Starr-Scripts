@@ -713,7 +713,7 @@ $releaseGroupsList = [System.Collections.Generic.List[string]]::new()
 
 #------------- SCRIPT STARTS -------------#
 
-if ($PSCmdlet.ShouldProcess("Radarr", "Retrieving all movies")) {
+if ($PSCmdlet.ShouldProcess("Radarr", "Retrieving API version")) {
     $apiVersion = Get-StarrApiVersion -ApiKey $radarrApiKey -Application "Radarr" -Url $radarrUrl
 }
 
