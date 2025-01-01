@@ -21,12 +21,12 @@ function Confirm-StarrApiResponse {
         Validates HTTP response codes from Starr application API calls.
 
     .DESCRIPTION
-        Validates HTTP status codes returned from Starr applications (Radarr/Sonarr/Lidarr).
+        Validates HTTP status codes returned from Starr applications (Radarr/Sonarr).
         Throws descriptive errors for common HTTP error codes and provides guidance for resolution.
         Returns true for successful (2xx) responses.
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr) making the API call.
+        The name of the Starr application (Radarr/Sonarr) making the API call.
 
     .PARAMETER FunctionName
         The name of the function that made the API call, used for error reporting.
@@ -121,13 +121,13 @@ function Get-StarrApiVersion {
 
     .DESCRIPTION
         The Get-StarrApiVersion function makes a GET request to a Starr application's API
-        endpoint to retrieve the current API version. Supports Radarr, Sonarr, and Lidarr.
+        endpoint to retrieve the current API version. Supports Radarr, and Sonarr.
 
     .PARAMETER ApiKey
         The API key required to authenticate with the Starr application.
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Radarr/Sonarr).
 
     .PARAMETER Url
         The base URL of the Starr application (e.g., http://localhost:7878).
@@ -196,7 +196,6 @@ function Get-StarrMedia {
         Fetches all media items (movies/series/artists) from a Starr application's API.
         - Radarr: Returns all movies
         - Sonarr: Returns all series
-        - Lidarr: Returns all artists
 
     .PARAMETER ApiKey
         The API key for the Starr application.
@@ -205,7 +204,7 @@ function Get-StarrMedia {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Radarr/Sonarr).
 
     .PARAMETER Url
         The base URL of the Starr application (e.g., http://localhost:7878).
@@ -218,16 +217,11 @@ function Get-StarrMedia {
         Get-StarrMedia -ApiKey "1234..." -ApiVersion "v3" -Application "Sonarr" -Url "http://localhost:8989"
         # Returns all series from Sonarr
 
-    .EXAMPLE
-        Get-StarrMedia -ApiKey "1234..." -ApiVersion "v3" -Application "Lidarr" -Url "http://localhost:8686"
-        # Returns all artists from Lidarr
-
     .OUTPUTS
-        [Array]
+        [System.Object[]]
         Returns an array of media objects specific to the application type:
         - Radarr: Movie objects
         - Sonarr: Series objects
-        - Lidarr: Artist objects
 
     .NOTES
         - Requires valid API key and accessible application URL
@@ -262,9 +256,6 @@ function Get-StarrMedia {
             }
             "sonarr" {
                 $apiEndpoint = 'series'
-            }
-            "lidarr" {
-                $apiEndpoint = 'artist'
             }
         }
 
@@ -301,7 +292,7 @@ function Get-StarrMediaTags {
 
     .DESCRIPTION
         The Get-StarrMediaTags function retrieves all configured tags from a Starr application
-        (Radarr/Sonarr/Lidarr) using its API. The function makes a GET request to the /api/tag
+        (Radarr/Sonarr) using its API. The function makes a GET request to the /api/tag
         endpoint and returns the complete list of tags.
 
     .PARAMETER ApiKey
@@ -311,7 +302,7 @@ function Get-StarrMediaTags {
         The version of the API to use (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Radarr/Sonarr).
 
     .PARAMETER Url
         The base URL of the Starr application (e.g., http://localhost:7878).
@@ -325,7 +316,7 @@ function Get-StarrMediaTags {
         # Returns all tags configured in Sonarr
 
     .OUTPUTS
-        [Array]
+        [System.Object[]]
         Returns an array of tag objects containing:
         - Id: The unique identifier of the tag
         - Label: The display name of the tag
@@ -380,7 +371,7 @@ function New-StarrTag {
         Creates a new tag in a Starr application.
 
     .DESCRIPTION
-        Creates a new tag in a Starr application (Radarr/Sonarr/Lidarr) using the API.
+        Creates a new tag in a Starr application (Radarr/Sonarr) using the API.
         Returns the ID of the newly created tag.
 
     .PARAMETER ApiKey
@@ -390,7 +381,7 @@ function New-StarrTag {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Radarr/Sonarr).
 
     .PARAMETER TagName
         The name of the tag to create.
@@ -471,7 +462,7 @@ function Remove-StarrMediaTag {
         Removes specified tag from media items in a Starr application.
 
     .DESCRIPTION
-        Removes a tag from specified media items in Radarr, Sonarr, or Lidarr using their respective APIs.
+        Removes a tag from specified media items in Radarr or Sonarr using their respective APIs.
         Handles different media types (movies/series/artists) appropriately per application.
 
     .PARAMETER ApiKey
@@ -481,7 +472,7 @@ function Remove-StarrMediaTag {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Radarr/Sonarr).
 
     .PARAMETER Media
         Array of media objects to remove the tag from.
@@ -520,7 +511,7 @@ function Remove-StarrMediaTag {
         $Application,
 
         [Parameter(Mandatory = $true)]
-        [array]
+        [System.Object[]]
         $Media,
 
         [Parameter(Mandatory = $true)]
@@ -546,10 +537,6 @@ function Remove-StarrMediaTag {
                 $body = "{`"seriesIds`":[$mediaId],`"tags`":[$tagId], `"applyTags`":`"remove`"}"
                 $apiEndpoint = 'series/editor'
 
-            }
-            "lidarr" {
-                $body = "{`"artistIds`":[$mediaId],`"tags`":[$tagId], `"applyTags`":`"remove`"}"
-                $apiEndpoint = 'artist/editor'
             }
         }
 
@@ -586,11 +573,10 @@ function Add-StarrMediaTag {
         Adds specified tag to media items in a Starr application.
 
     .DESCRIPTION
-        Adds a tag to specified media items in Radarr, Sonarr, or Lidarr using their respective APIs.
+        Adds a tag to specified media items in Radarr or Sonarr using their respective APIs.
         Handles different media types appropriately:
         - Radarr: Movies tagging
         - Sonarr: Series tagging
-        - Lidarr: Artist tagging
 
     .PARAMETER ApiKey
         The API key for the Starr application.
@@ -599,7 +585,7 @@ function Add-StarrMediaTag {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Radarr/Sonarr).
 
     .PARAMETER Media
         Array of media objects to add the tag to.
@@ -643,7 +629,7 @@ function Add-StarrMediaTag {
         $Application,
 
         [Parameter(Mandatory = $true)]
-        [array]
+        [System.Object[]]
         $Media,
 
         [Parameter(Mandatory = $true)]
@@ -669,10 +655,6 @@ function Add-StarrMediaTag {
                 $body = "{`"seriesIds`":[$mediaId],`"tags`":[$tagId],`"applyTags`":`"add`"}"
                 $apiEndpoint = 'series/editor'
 
-            }
-            "lidarr" {
-                $body = "{`"artistIds`":[$mediaId],`"tags`":[$tagId], `"applyTags`":`"add`"}"
-                $apiEndpoint = 'artist/editor'
             }
         }
 
