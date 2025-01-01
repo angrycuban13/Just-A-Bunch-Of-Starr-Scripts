@@ -8,24 +8,8 @@ Owinenatorr is a Powershell script that kicks off rename operations programatica
 * [Unraid](#unraid)
 * [Windows](#windows)
 * [Docker Compose](#docker-compose)
-
-### Dry Run
-
-> [!TIP]
-> Useful if you want to see what the script is going to do
-
-```powershell
-pwsh /path/to/repo/clone/location/Owinenatorr/owinenatorr.ps1 -ApplicationList radarr -WhatIf
-```
-
-### Verbose Output
-
-> [!TIP]
-> Useful for debugging
-
-```powershell
-pwsh /path/to/repo/clone/location/Owinenatorr/owinenatorr.ps1 -ApplicationList radarr -Verbose
-```
+* [Dry Run](#dry-run)
+* [Verbose](#verbose)
 
 ## Why should I use this script?
 
@@ -211,3 +195,21 @@ pwsh /path/to/repo/clone/location/Owinenatorr/owinenatorr.ps1 -ApplicationList r
 
 > [!WARNING]
 > It is never recommended to run scripts as `SYSTEM`. We suggest you use a service account to run your schedule tasks.
+
+### Dry Run
+
+> [!TIP]
+> Useful if you want to see what the script is going to do
+
+```powershell
+pwsh /path/to/repo/clone/location/Owinenatorr/owinenatorr.ps1 -ApplicationList radarr -WhatIf
+```
+
+### Verbose
+
+> [!TIP]
+> Useful for debugging
+
+```powershell
+pwsh /path/to/repo/clone/location/Owinenatorr/owinenatorr.ps1 -ApplicationList radarr -Verbose
+```
