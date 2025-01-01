@@ -7,7 +7,7 @@
 
 .PARAMETER ApplicationList
     Array of Starr applications to process.
-    Aliases: Apps, AppsList
+    Aliases : Apps, AppsList
     Required: True
 
 .PARAMETER ConfigurationFile
