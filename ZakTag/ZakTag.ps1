@@ -688,8 +688,8 @@ function Add-StarrMediaTag {
 
 #------------- DEFINE VARIABLES -------------#
 
-$radarrApiKey = "8d6fca8d8e8342599fcd9397e859da8b"
-$radarrUrl = "http://blackbox.lan:7878/radarr"
+$radarrApiKey = ""
+$radarrUrl = ""
 $tagNamePrefix = "ZakTag -"
 $releaseGroupsList = [System.Collections.Generic.List[string]]::new()
 
