@@ -7,13 +7,13 @@
 
 .PARAMETER ApplicationList
     Array of Starr applications to process.
-    Aliases : Apps, AppsList
+    Aliases: Apps, AppsList
     Required: True
 
 .PARAMETER ConfigurationFile
     Path to the configuration file.
-    Aliases : Config, ConfigFile
-    Default : "./upgradinatorr.conf"
+    Aliases: Config, ConfigFile
+    Default: "./upgradinatorr.conf"
     Required: False
 
 .EXAMPLE
@@ -57,9 +57,9 @@ function Add-StarrMediaTag {
     .DESCRIPTION
         Adds a tag to specified media items in Radarr, Sonarr, or Lidarr using their respective APIs.
         Handles different media types appropriately:
-        -       Radarr                             : Movies tagging
-        -       Sonarr                             : Series tagging
-        -       Lidarr                             : Artist tagging
+        - Radarr: Movies tagging
+        - Sonarr: Series tagging
+        - Lidarr: Artist tagging
 
     .PARAMETER ApiKey
         The API key for the Starr application.
@@ -112,7 +112,7 @@ function Add-StarrMediaTag {
         $Application,
 
         [Parameter(Mandatory = $true)]
-        [array]
+        [System.Object[]]
         $Media,
 
         [Parameter(Mandatory = $true)]
@@ -250,7 +250,7 @@ function Confirm-Configuration {
         String specifying which section to validate. Can be 'Quotes', 'Notifications', or an application name (e.g., 'Radarr').
 
     .EXAMPLE
-        $config  = Read-ConfigurationFile -File "config.ini"
+        $config = Read-ConfigurationFile -File "config.ini"
         $isValid = Confirm-Configuration -Configuration $config -Section "Quotes"
         # Validates entire configuration including quote checks
 
@@ -269,7 +269,7 @@ function Confirm-Configuration {
     .NOTES
         Validation Rules:
         - API Keys must be 32 characters
-        - URLs must start with http: // or https://
+        - URLs must start with http:// or https://
         - Count must be 'max' or a positive integer
         - Monitored and Unattended must be 'true' or 'false'
         - Movie/Series/Artist status must match predefined values
@@ -475,13 +475,13 @@ function Confirm-StarrApiResponse {
 
     .NOTES
         Handled Status Codes:
-        -       2xx         : Success
-        -       302         : Redirect (missing URL base)
-        -       400         : Bad Request
-        -       401         : Unauthorized (invalid API key)
-        -       404         : Not Found
-        -       409         : Conflict
-        -       500         : Internal Server Error
+        - 2xx: Success
+        - 302: Redirect (missing URL base)
+        - 400: Bad Request
+        - 401: Unauthorized (invalid API key)
+        - 404: Not Found
+        - 409: Conflict
+        - 500: Internal Server Error
     #>
 
     [CmdletBinding()]
@@ -781,11 +781,11 @@ function Get-StarrMedia {
         # Returns all artists from Lidarr
 
     .OUTPUTS
-        [Array]
+        [System.Object[]]
         Returns an array of media objects specific to the application type:
-        -       Radarr                                                    : Movie objects
-        -       Sonarr                                                    : Series objects
-        -       Lidarr                                                    : Artist objects
+        - Radarr: Movie objects
+        - Sonarr: Series objects
+        - Lidarr: Artist objects
 
     .NOTES
         - Requires valid API key and accessible application URL
@@ -951,7 +951,7 @@ function Read-ConfigurationFile {
     .DESCRIPTION
         The Read-ConfigurationFile function reads an INI-style configuration file and converts it into
         a structured PowerShell custom object. It supports sections denoted by [SectionName] and
-        key-value pairs in the format key = value. Comments starting with semicolon (;) are ignored.
+        key-value pairs in the format key=value. Comments starting with semicolon (;) are ignored.
 
     .PARAMETER File
         The path to the INI configuration file to be parsed. The file must exist.
@@ -962,7 +962,7 @@ function Read-ConfigurationFile {
         # Example config.ini content:
         # [Database]
         # Server = localhost
-        # Port   = 1433
+        # Port = 1433
 
         # Accessing the parsed config:
         # $config.Database.Server    # Returns "localhost"
@@ -1075,7 +1075,7 @@ function Remove-StarrMediaTag {
         $Application,
 
         [Parameter(Mandatory = $true)]
-        [array]
+        [System.Object[]]
         $Media,
 
         [Parameter(Mandatory = $true)]
@@ -1146,12 +1146,12 @@ function Select-StarrMedia {
 
     .PARAMETER ApplicationConfiguration
         Hashtable containing configuration settings including:
-        -         TagName                                    : Name of the tag to filter by
-        -         TagId                                      : ID of the tag to filter by
-        -         Monitored                                  : Boolean indicating monitored status
-        -         Status                                     : (Optional) Status to filter by
-        -         QualityProfileId                           : (Optional) Quality profile ID to filter by
-        -         IgnoreTagId                                : (Optional) Tag ID to exclude from results
+        - TagName: Name of the tag to filter by
+        - TagId: ID of the tag to filter by
+        - Monitored: Boolean indicating monitored status
+        - Status: (Optional) Status to filter by
+        - QualityProfileId: (Optional) Quality profile ID to filter by
+        - IgnoreTagId: (Optional) Tag ID to exclude from results
 
     .PARAMETER Media
         Array of media objects from a Starr application to be filtered.
@@ -1163,8 +1163,8 @@ function Select-StarrMedia {
 
     .EXAMPLE
         $config = @{
-            TagName   = "upgrade"
-            TagId     = 1
+            TagName = "upgrade"
+            TagId = 1
             Monitored = $true
         }
         Select-StarrMedia -ApplicationConfiguration $config -Media $mediaArray
@@ -1175,7 +1175,7 @@ function Select-StarrMedia {
         # Returns only monitored media with the "upgrade" tag
 
     .OUTPUTS
-        [Array]
+        [System.Object[]]
         Returns filtered array of media objects matching specified criteria.
 
     .NOTES
@@ -1191,7 +1191,7 @@ function Select-StarrMedia {
         $ApplicationConfiguration,
 
         [Parameter(Mandatory = $true)]
-        [array]
+        [System.Object[]]
         $Media,
 
         [Parameter(Mandatory = $false)]
@@ -1437,11 +1437,11 @@ function Send-NotifiarrPassThroughNotification {
     .EXAMPLE
         PS> $notificationParams = @{
             NotifiarrPassthroughApplicationName = "HomeAutomation"
-            NotifiarrPassthroughUpdate          = $true
-            NotifiarrPassthroughTitle           = "Sensor Update"
-            NotifiarrPassthroughContent         = "Temperature sensor offline"
-            NotifiarrPassthroughColor           = "#FF0000"
-            NotifiarrPassthroughWebhook         = $webhookUrl
+            NotifiarrPassthroughUpdate = $true
+            NotifiarrPassthroughTitle = "Sensor Update"
+            NotifiarrPassthroughContent = "Temperature sensor offline"
+            NotifiarrPassthroughColor = "#FF0000"
+            NotifiarrPassthroughWebhook = $webhookUrl
         }
         PS> Send-NotifiarrPassThroughNotification @notificationParams
 
@@ -1449,7 +1449,7 @@ function Send-NotifiarrPassThroughNotification {
         None. Displays success/failure messages to console.
 
     .LINK
-        https: //notifiarr.wiki/en/Website/Integrations/Passthrough
+        https://notifiarr.wiki/en/Website/Integrations/Passthrough
     #>
 
     [CmdletBinding(SupportsShouldProcess)]
@@ -1595,9 +1595,9 @@ function Start-StarrMediaSearch {
     .DESCRIPTION
         Triggers a search operation for specified media items in Radarr, Sonarr, or Lidarr.
         Handles different media types appropriately:
-        -       Radarr                             : Movies search
-        -       Sonarr                             : Series search
-        -       Lidarr                             : Artist search
+        - Radarr: Movies search
+        - Sonarr: Series search
+        - Lidarr: Artist search
 
     .PARAMETER ApiKey
         The API key for the Starr application.
@@ -1647,7 +1647,7 @@ function Start-StarrMediaSearch {
         $Application,
 
         [Parameter(Mandatory = $true)]
-        [array]
+        [System.Object[]]
         $Media,
 
         [Parameter(Mandatory = $true)]
