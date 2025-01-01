@@ -6,8 +6,10 @@
     The ZakTag.ps1 script automatically tags movies in Radarr with their release group. The script retrieves all movies from Radarr, filters the results to only movies with existing files, and then retrieves all existing tags. The script then creates missing tags for each release group, filters the tags to only release group tags, and tags movies with their corresponding release group tag. If the movie has the wrong tag, the script will remove it and apply the correct tag.
 
 .NOTES
-    Author: AngryCuban13
-    Version: 2.0
+    Author      : angrycuban13
+    Dependencies: None
+    Requires    : PowerShell 7+
+    Version     : 2.0
 #>
 
 #Requires -Version 7

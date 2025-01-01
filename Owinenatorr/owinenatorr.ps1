@@ -27,12 +27,15 @@
     None. Uses Write-Host for status updates.
 
 .NOTES
-    Version      : 2.0
-    Author       : AngryCuban13
+    Author      : angrycuban13
+    Dependencies: None
+    Requires    : PowerShell 7+
+    Version     : 2.0
 
 .LINK
     https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts
 #>
+
 #Requires -Version 7
 
 [CmdletBinding(SupportsShouldProcess)]

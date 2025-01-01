@@ -25,11 +25,12 @@
     # Process Lidarr using default config file
 
 .NOTES
-    Author  : AngryCuban13
-    Requires: PowerShell 7
-    Version : 3.0
+    Author      : angrycuban13
+    Dependencies: None
+    Requires    : PowerShell 7+
+    Version     : 3.0
 
-    Special thanks to Roxedus and austinwbest for giving me a guiding hand at the beginning of this
+    Special thanks to Roxedus and austinwbest for giving me a guiding hand at the beginning of this script.
 #>
 
 #Requires -Version 7
