@@ -1882,7 +1882,7 @@ foreach ($application in $applicationList) {
 
                 if ($sendDiscordNotification) {
                     $params = @{
-                        AvatarUrl          = 'https://gh.notifiarr.com/images/powershell.png'
+                        AvatarUrl          = 'https://gh.notifiarr.com/images/icons/powershell.png'
                         MessageTitle       = "Upgradinatorr - $applicationName"
                         MessageDescription = "No media left to search for $applicationName"
                         Color              = $color.Decimal
