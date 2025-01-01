@@ -1,3 +1,38 @@
+<#
+.SYNOPSIS
+    Owinenatorr is a Powershell script that kicks off rename operations programatically in Radarr and Sonarr after changing the naming scheme for movies or series.
+
+.DESCRIPTION
+    Owinenatorr is a Powershell script that kicks off rename operations programatically in Radarr and Sonarr after changing the naming scheme for movies or series. It queries the rename endpoint for Radarr or Sonarr and then if needed, starts the renaming task. Once the media items have been processed, it adds a tag to every item that was checked. Once all items have been tagged, it removes the tag from every item and starts over.
+
+.PARAMETER ApplicationList
+    Array of Starr applications to process (Radarr/Sonarr).
+    Aliases: Apps, AppsList
+    Required: True
+
+.PARAMETER ConfigurationFile
+    Path to configuration file. Defaults to owinenatorr.conf in script directory.
+    Aliases: Config, ConfigFile
+    Required: False
+
+.EXAMPLE
+    .\owinenatorr.ps1 -ApplicationList "Radarr","Sonarr"
+    # Process both Radarr and Sonarr using default config
+
+.EXAMPLE
+    .\owinenatorr.ps1 -Apps "Radarr" -Config "C:\config\custom.conf"
+    # Process only Radarr using custom config file
+
+.OUTPUTS
+    None. Uses Write-Host for status updates.
+
+.NOTES
+    Version      : 2.0
+    Author       : AngryCuban13
+
+.LINK
+    https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts
+#>
 #Requires -Version 7
 
 [CmdletBinding(SupportsShouldProcess)]
