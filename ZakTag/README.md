@@ -23,7 +23,7 @@ You should use this script if you want to keep track of how many movies from *X*
 ### General
 
 > [!IMPORTANT]
-> Please fill in the variables in line 709-710:
+> Please fill in the variables in line 691-692:
 
 * `$radarrApiKey` - Your Radarr API Key
 * `$radarrUrl` - Your Radarr URL
