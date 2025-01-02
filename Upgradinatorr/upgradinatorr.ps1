@@ -321,29 +321,49 @@ function Confirm-Configuration {
         # Validate the Notifications section
         elseif ($section -eq 'Notifications') {
             # Check if the Discord Webhook has been specified
-            if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.DiscordWebhook)) {
+            if ((-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.DiscordWebhook)) -or (-Not [string]::IsNullOrWhiteSpace($configuration.General.DiscordWebhook))) {
                 Write-Verbose "Discord Webhook has been specified, verifying it is formatted correctly"
 
                 # Validate the Discord Webhook URL is formatted correctly
-                if ($configuration.Notifications.DiscordWebhook -notmatch $webhookRegexMatchDiscord) {
-                    Write-Warning "Discord Webhook is not formatted correctly, it should look like `"https:   //discord.com/api/webhooks/Id123/Token123`""
-                    $errorCount++
+                if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.DiscordWebhook)) {
+                    if ($configuration.Notifications.DiscordWebhook -notmatch $webhookRegexMatchDiscord) {
+                        Write-Warning "Discord Webhook in Notifications section is not formatted correctly, it should look like `"https://discord.com/api/webhooks/Id123/Token123`""
+                        $errorCount++
+                    }
+                }
+                if (-Not [string]::IsNullOrWhiteSpace($configuration.General.DiscordWebhook)) {
+                    if ($configuration.General.DiscordWebhook -notmatch $webhookRegexMatchDiscord) {
+                        Write-Warning "Discord Webhook in General section is not formatted correctly, it should look like `"https://discord.com/api/webhooks/Id123/Token123`""
+                        $errorCount++
+                    }
                 }
             }
 
             # Check if the Notifiarr Passthrough Webhook has been specified
-            if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.NotifiarrPassthroughWebhook)) {
+            if ((-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.NotifiarrPassthroughWebhook)) -or (-Not [string]::IsNullOrWhiteSpace($configuration.General.NotifiarrPassthroughWebhook))) {
                 Write-Verbose "Notifiarr Passthrough Webhook has been specified, verifying it is formatted correctly"
 
-                # Validate the Notifiarr Passthrough Webhook URL is formatted correctly
-                if ($configuration.Notifications.NotifiarrPassthroughWebhook -notmatch $webhookRegexMatchNotifiarrPassthrough) {
-                    Write-Warning "Notifiarr Passthrough Webhook is not formatted correctly, it should look like `"https:   //notifiarr\.com/api/v1/notification/passthrough/uuid-uuid-uuid-uuid-uuid`""
-                    $errorCount++
+                # Validate the Discord Webhook URL is formatted correctly
+                if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.NotifiarrPassthroughWebhook)) {
+                    if ($configuration.Notifications.NotifiarrPassthroughWebhook -notmatch $webhookRegexMatchNotifiarrPassthrough) {
+                        Write-Warning "Notifiarr Passthrough Webhook is not formatted correctly, it should look like `"https://notifiarr\.com/api/v1/notification/passthrough/uuid-uuid-uuid-uuid-uuid`""
+                        $errorCount++
+                    }
+                    if ($configuration.Notifications.NotifiarrPassthroughDiscordChannelId -notmatch '^\d{17,19}$') {
+                        Write-Warning "Notifiarr Passthrough Discord Channel ID is not formatted correctly, it should be a 17-19 digit number"
+                        $errorCount++
+                    }
                 }
 
-                if ($configuration.Notifications.NotifiarrPassthroughDiscordChannelId -notmatch '^\d{17,19}$') {
-                    Write-Warning "Notifiarr Passthrough Discord Channel ID is not formatted correctly, it should be a 17-19 digit number"
-                    $errorCount++
+                if (-Not [string]::IsNullOrWhiteSpace($configuration.General.NotifiarrPassthroughWebhook)) {
+                    if ($configuration.General.NotifiarrPassthroughWebhook -notmatch $webhookRegexMatchNotifiarrPassthrough) {
+                        Write-Warning "Notifiarr Passthrough Webhook is not formatted correctly, it should look like `"https://notifiarr\.com/api/v1/notification/passthrough/uuid-uuid-uuid-uuid-uuid`""
+                        $errorCount++
+                    }
+                    if ($configuration.General.NotifiarrPassthroughDiscordChannelId -notmatch '^\d{17,19}$') {
+                        Write-Warning "Notifiarr Passthrough Discord Channel ID is not formatted correctly, it should be a 17-19 digit number"
+                        $errorCount++
+                    }
                 }
             }
         }
