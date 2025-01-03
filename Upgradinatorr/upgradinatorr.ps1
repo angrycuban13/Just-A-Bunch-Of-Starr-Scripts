@@ -1689,7 +1689,7 @@ function Start-StarrMediaSearch {
                 $body = "{`"name`":`"SeriesSearch`", `"seriesId`":$mediaId}"
             }
             "lidarr" {
-                $body = "{`"name`":`"ArtistSearch`", `"artistId`":[$mediaId]}"
+                $body = "{`"name`":`"ArtistSearch`", `"artistId`":$mediaId}"
             }
         }
 
@@ -1948,7 +1948,7 @@ foreach ($application in $applicationList) {
     # Start the search for media items
     if ($PSCmdlet.ShouldProcess($applicationName, "Starting search for media items")) {
         # Sonarr's API only supports searching one series at a time, so we need to loop through each media item in $mediaToSearch
-        if ($applicationName -match 'sonarr') {
+        if ($applicationName -match 'sonarr|lidarr') {
             foreach ($mediaItem in $mediaToSearch) {
                 Start-StarrMediaSearch -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Media $mediaItem -Url $applicationConfiguration.Url
             }
