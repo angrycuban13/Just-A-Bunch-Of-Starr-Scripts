@@ -1947,7 +1947,7 @@ foreach ($application in $applicationList) {
 
     # Start the search for media items
     if ($PSCmdlet.ShouldProcess($applicationName, "Starting search for media items")) {
-        # Sonarr's API only supports searching one series at a time, so we need to loop through each media item in $mediaToSearch
+        # Sonarr/Lidarr API only supports searching one item at a time, so we need to loop through each media item in $mediaToSearch
         if ($applicationName -match 'sonarr|lidarr') {
             foreach ($mediaItem in $mediaToSearch) {
                 Start-StarrMediaSearch -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Media $mediaItem -Url $applicationConfiguration.Url
@@ -1965,6 +1965,8 @@ foreach ($application in $applicationList) {
 
     # Send a notification to the enabled services
     if ($PSCmdlet.ShouldProcess($applicationName, "Sending notification to enabled services")) {
+        $titleList = [System.Collections.Generic.List[string]]::new()
+
         switch -Regex ($application) {
             "radarr" {
                 $thumbnail = 'https://gh.notifiarr.com/images/icons/radarr.png'
@@ -1999,8 +2001,16 @@ foreach ($application in $applicationList) {
         $descriptionField = @"
             Search started for $($mediaToSearch.Count) media items in $applicationName`:
 "@
-        foreach ($media in $mediaToSearch) {
-            $descriptionField += "`r`n- $($media.title)"
+
+        foreach ($mediaItem in $mediaToSearch) {
+            if ($application -match $lidarr) {
+                $descriptionField += "`r`n- $($mediaItem.artistName)"
+                $titleList.Add("`n- $($mediaItem.artistName)")
+            }
+            else {
+                $descriptionField += "`r`n- $($mediaItem.title)"
+                $titleList.Add("`n- $($mediaItem.title)")
+            }
         }
 
         if ($descriptionField.Length -gt 4096) {
@@ -2032,11 +2042,6 @@ foreach ($application in $applicationList) {
             Send-NotifiarrPassThroughNotification @params
         }
 
-        $titleList = [System.Collections.Generic.List[string]]::new()
-
-        foreach ($media in $mediaToSearch) {
-            $titleList.Add("`n- $($media.title)")
-        }
         Write-Host "Search started for $($mediaToSearch.Count) media items in $applicationName`:$titleList`n" -ForegroundColor Green
     }
 }
