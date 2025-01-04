@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    Manages media upgrades by kicking off a manual search in Starr applications (Radarr/Sonarr/Lidarr).
+    Manages media upgrades by kicking off a manual search in Starr applications (Lidarr/Radarr/Readarr/Sonarr/Readarr).
 
 .DESCRIPTION
     The Upgradinatorr script automates media upgrades in Starr applications by triggering a manual search for media items that meet specific criteria. While the Starr applications already look for better quality media, it only "searches forward". If you modify a Custom Format, media items that were previously ignored will not be picked up by the automatic search. This script allows you to manually look forward and backward to find media items that can be upgraded.
@@ -45,7 +45,7 @@ param (
     [Parameter(Mandatory = $false)]
     [Alias('Config', 'ConfigFile')]
     [System.IO.FileInfo]
-    $ConfigurationFile = (Join-Path -Path $PSScriptRoot -ChildPath "upgradinatorr.conf")
+    $ConfigurationFile = (Join-Path -Path $PSScriptRoot -ChildPath 'upgradinatorr.conf')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,7 +56,7 @@ function Add-StarrMediaTag {
         Adds specified tag to media items in a Starr application.
 
     .DESCRIPTION
-        Adds a tag to specified media items in Radarr, Sonarr, or Lidarr using their respective APIs.
+        Adds a tag to specified media items in Lidarr, Radarr, Readarr or Sonarr using their respective APIs.
         Handles different media types appropriately:
         - Radarr: Movies tagging
         - Sonarr: Series tagging
@@ -69,7 +69,7 @@ function Add-StarrMediaTag {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Lidarr/Radarr/Readarr/Sonarr).
 
     .PARAMETER Media
         Array of media objects to add the tag to.
@@ -131,18 +131,22 @@ function Add-StarrMediaTag {
 
         # Determine the API endpoint and body based on the application
         switch -Regex ($application) {
-            "radarr" {
+            'radarr' {
                 $body = "{`"movieIds`":[$mediaId],`"tags`":[$($tagId)],`"applyTags`":`"add`"}"
                 $apiEndpoint = 'movie/editor'
             }
-            "sonarr" {
+            'sonarr' {
                 $body = "{`"seriesIds`":[$mediaId],`"tags`":[$tagId],`"applyTags`":`"add`"}"
                 $apiEndpoint = 'series/editor'
 
             }
-            "lidarr" {
+            'lidarr' {
                 $body = "{`"artistIds`":[$mediaId],`"tags`":[$tagId], `"applyTags`":`"add`"}"
                 $apiEndpoint = 'artist/editor'
+            }
+            'readarr' {
+                $body = "{`"authorIds`":[$mediaId],`"tags`":[$tagId], `"applyTags`":`"add`"}"
+                $apiEndpoint = 'author/editor'
             }
         }
 
@@ -180,11 +184,11 @@ function Confirm-Application {
 
     .DESCRIPTION
         The Confirm-Application function checks if the provided application name
-        is one of the supported Starr applications (Radarr, Sonarr, or Lidarr).
+        is one of the supported Starr applications (Lidarr, Radarr, Readarr or Sonarr).
         It performs a case-insensitive validation using regex pattern matching.
 
     .PARAMETER Application
-        The name of the application to validate. Must be one of: radarr, sonarr, or lidarr.
+        The name of the application to validate. Must be one of: lidarr, radarr, readarr, sonarr.
         This parameter is case-insensitive.
 
     .EXAMPLE
@@ -197,12 +201,6 @@ function Confirm-Application {
 
     .OUTPUTS
         None. The function throws an error if the application is not supported.
-
-    .NOTES
-        Supported applications:
-        - Radarr
-        - Sonarr
-        - Lidarr
     #>
 
     [CmdletBinding()]
@@ -216,7 +214,7 @@ function Confirm-Application {
 
     process {
         switch -Regex ($application) {
-            "radarr|sonarr|lidarr" {
+            'lidarr|radarr|readarr|sonarr' {
                 Write-Verbose "$application is a supported application"
             }
             default {
@@ -231,7 +229,7 @@ function Confirm-Application {
 function Confirm-Configuration {
     <#
     .SYNOPSIS
-        Validates configuration settings for Starr applications (Radarr/Sonarr/Lidarr) and notification services.
+        Validates configuration settings for Starr applications (Lidarr/Radarr/Readarr/Sonarr) and notification services.
 
     .DESCRIPTION
         The Confirm-Configuration function performs comprehensive validation of configuration settings for *arr applications and notification services. It checks:
@@ -273,7 +271,7 @@ function Confirm-Configuration {
         - URLs must start with http:// or https://
         - Count must be 'max' or a positive integer
         - Monitored and Unattended must be 'true' or 'false'
-        - Movie/Series/Artist status must match predefined values
+        - Artist/Author/Movie/Series status must match predefined values
         - Discord webhooks must match specific URL pattern
         - Notifiarr webhooks must match UUID pattern
         - No quotes allowed in configuration values
@@ -294,6 +292,7 @@ function Confirm-Configuration {
         $errorCount = 0
         $monitoredValues = @('true', 'false')
         $statusValuesForArtists = @('continuing', 'ended')
+        $statusValuesForAuthors = @('continuing', 'ended')
         $statusValuesForMovies = @('tba', 'announced', 'inCinemas', 'released', 'deleted')
         $statusValuesForSeries = @('continuing', 'ended', 'upcoming', 'deleted')
         $unattendedValues = @('true', 'false')
@@ -304,7 +303,7 @@ function Confirm-Configuration {
 
     process {
         # Add quote validation before other checks
-        if ($section -eq "Quotes") {
+        if ($section -eq 'Quotes') {
             $configuration.PSObject.Properties | ForEach-Object {
                 $sectionName = $_.Name
                 $sectionValues = $_.Value
@@ -322,7 +321,7 @@ function Confirm-Configuration {
         elseif ($section -eq 'Notifications') {
             # Check if the Discord Webhook has been specified
             if ((-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.DiscordWebhook)) -or (-Not [string]::IsNullOrWhiteSpace($configuration.General.DiscordWebhook))) {
-                Write-Verbose "Discord Webhook has been specified, verifying it is formatted correctly"
+                Write-Verbose 'Discord Webhook has been specified, verifying it is formatted correctly'
 
                 # Validate the Discord Webhook URL is formatted correctly
                 if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.DiscordWebhook)) {
@@ -341,7 +340,7 @@ function Confirm-Configuration {
 
             # Check if the Notifiarr Passthrough Webhook has been specified
             if ((-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.NotifiarrPassthroughWebhook)) -or (-Not [string]::IsNullOrWhiteSpace($configuration.General.NotifiarrPassthroughWebhook))) {
-                Write-Verbose "Notifiarr Passthrough Webhook has been specified, verifying it is formatted correctly"
+                Write-Verbose 'Notifiarr Passthrough Webhook has been specified, verifying it is formatted correctly'
 
                 # Validate the Discord Webhook URL is formatted correctly
                 if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.NotifiarrPassthroughWebhook)) {
@@ -350,7 +349,7 @@ function Confirm-Configuration {
                         $errorCount++
                     }
                     if ($configuration.Notifications.NotifiarrPassthroughDiscordChannelId -notmatch '^\d{17,19}$') {
-                        Write-Warning "Notifiarr Passthrough Discord Channel ID is not formatted correctly, it should be a 17-19 digit number"
+                        Write-Warning 'Notifiarr Passthrough Discord Channel ID is not formatted correctly, it should be a 17-19 digit number'
                         $errorCount++
                     }
                 }
@@ -361,7 +360,7 @@ function Confirm-Configuration {
                         $errorCount++
                     }
                     if ($configuration.General.NotifiarrPassthroughDiscordChannelId -notmatch '^\d{17,19}$') {
-                        Write-Warning "Notifiarr Passthrough Discord Channel ID is not formatted correctly, it should be a 17-19 digit number"
+                        Write-Warning 'Notifiarr Passthrough Discord Channel ID is not formatted correctly, it should be a 17-19 digit number'
                         $errorCount++
                     }
                 }
@@ -389,8 +388,7 @@ function Confirm-Configuration {
                         Write-Warning "Count for `"$applicationName`" is not a valid value, it should be greater than 0 or equal to `"max`""
                         $errorCount++
                     }
-                }
-                catch {
+                } catch {
                     Write-Warning "Count for `"$applicationName`" is not a valid value, it should be an integer or equal to `"max`""
                     $errorCount++
                 }
@@ -404,7 +402,7 @@ function Confirm-Configuration {
             }
 
             # Validate Status based on application
-            if ($applicationName -like "*Radarr*") {
+            if ($applicationName -like '*Radarr*') {
                 Write-Verbose "Validating `"MovieStatus`" for `"$applicationName`""
                 if ($applicationConfig.MovieStatus -notin $statusValuesForMovies -and -Not [string]::IsNullOrWhiteSpace($applicationConfig.MovieStatus)) {
                     Write-Warning "MovieStatus for `"$applicationName`" is not a valid value, expected one of the following: $($statusValuesForMovies -join ', ')"
@@ -412,7 +410,7 @@ function Confirm-Configuration {
                 }
             }
 
-            if ($applicationName -like "*Sonarr*") {
+            if ($applicationName -like '*Sonarr*') {
                 Write-Verbose "Validating `"SeriesStatus`" for `"$applicationName`""
                 if ($applicationConfig.SeriesStatus -notin $statusValuesForSeries -and -Not [string]::IsNullOrWhiteSpace($applicationConfig.SeriesStatus)) {
                     Write-Warning "SeriesStatus for `"$applicationName`" is not a valid value, expected one of the following: $($statusValuesForSeries -join ', ')"
@@ -420,10 +418,18 @@ function Confirm-Configuration {
                 }
             }
 
-            if ($applicationName -like "*Lidarr*") {
+            if ($applicationName -like '*Lidarr*') {
                 Write-Verbose "Validating `"ArtistStatus`" for `"$applicationName`""
                 if ($applicationConfig.ArtistStatus -notin $statusValuesForArtists -and -Not [string]::IsNullOrWhiteSpace($applicationConfig.ArtistStatus)) {
                     Write-Warning "ArtistStatus for `"$applicationName`" is not a valid value, expected one of the following: $($statusValuesForArtists -join ', ')"
+                    $errorCount++
+                }
+            }
+
+            if ($applicationName -like '*Readarr*') {
+                Write-Verbose "Validating `"AuthorStatus`" for `"$applicationName`""
+                if ($applicationConfig.AuthorStatus -notin $statusValuesForAuthors -and -Not [string]::IsNullOrWhiteSpace($applicationConfig.AuthorStatus)) {
+                    Write-Warning "AuthorStatus for `"$applicationName`" is not a valid value, expected one of the following: $($statusValuesForAuthors -join ', ')"
                     $errorCount++
                 }
             }
@@ -455,8 +461,7 @@ function Confirm-Configuration {
         # Return $true if no errors were found, $false otherwise
         if ($errorCount -gt 0) {
             $false
-        }
-        else {
+        } else {
             $true
         }
     }
@@ -468,12 +473,12 @@ function Confirm-StarrApiResponse {
         Validates HTTP response codes from Starr application API calls.
 
     .DESCRIPTION
-        Validates HTTP status codes returned from Starr applications (Radarr/Sonarr/Lidarr).
+        Validates HTTP status codes returned from Starr applications (Lidarr/Radarr/Readarr/Sonarr).
         Throws descriptive errors for common HTTP error codes and provides guidance for resolution.
         Returns true for successful (2xx) responses.
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr) making the API call.
+        The name of the Starr application (Lidarr/Radarr/Readarr/Sonarr) making the API call.
 
     .PARAMETER FunctionName
         The name of the function that made the API call, used for error reporting.
@@ -568,13 +573,13 @@ function Get-StarrApiVersion {
 
     .DESCRIPTION
         The Get-StarrApiVersion function makes a GET request to a Starr application's API
-        endpoint to retrieve the current API version. Supports Radarr, Sonarr, and Lidarr.
+        endpoint to retrieve the current API version. Supports Lidarr, Radarr, Readarr and Sonarr.
 
     .PARAMETER ApiKey
         The API key required to authenticate with the Starr application.
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Lidarr/Radarr/Readarr/Sonarr).
 
     .PARAMETER Url
         The base URL of the Starr application (e.g., http://localhost:7878).
@@ -640,7 +645,7 @@ function Get-StarrItemId {
         Retrieves ID for a tag or quality profile from a Starr application.
 
     .DESCRIPTION
-        Gets the ID of a tag or quality profile from a Starr application (Radarr/Sonarr/Lidarr).
+        Gets the ID of a tag or quality profile from a Starr application (Lidarr/Radarr/Readarr/Sonarr).
         For tags, creates a new tag if it doesn't exist.
         For quality profiles, throws an error if the profile doesn't exist.
 
@@ -651,7 +656,7 @@ function Get-StarrItemId {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Lidarr/Radarr/Readarr/Sonarr).
 
     .PARAMETER TagName
         The name of the tag to find or create. Part of 'Tag' parameter set.
@@ -772,10 +777,11 @@ function Get-StarrMedia {
         Retrieves all media items from a Starr application.
 
     .DESCRIPTION
-        Fetches all media items (movies/series/artists) from a Starr application's API.
-        - Radarr: Returns all movies
-        - Sonarr: Returns all series
+        Fetches all media items (artists/authors/movies/series) from a Starr application's API.
         - Lidarr: Returns all artists
+        - Radarr: Returns all movies
+        - Readarr: Returns all authors
+        - Sonarr: Returns all series
 
     .PARAMETER ApiKey
         The API key for the Starr application.
@@ -784,7 +790,7 @@ function Get-StarrMedia {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Lidarr/Radarr/Readarr/Sonarr).
 
     .PARAMETER Url
         The base URL of the Starr application (e.g., http://localhost:7878).
@@ -804,9 +810,10 @@ function Get-StarrMedia {
     .OUTPUTS
         [System.Object[]]
         Returns an array of media objects specific to the application type:
-        - Radarr: Movie objects
-        - Sonarr: Series objects
         - Lidarr: Artist objects
+        - Radarr: Movie objects
+        - Readarr: Author objects
+        - Sonarr: Series objects
 
     .NOTES
         - Requires valid API key and accessible application URL
@@ -836,14 +843,17 @@ function Get-StarrMedia {
     begin {
         # Determine the API endpoint based on the application
         switch -Regex ($application) {
-            "radarr" {
+            'radarr' {
                 $apiEndpoint = 'movie'
             }
-            "sonarr" {
+            'sonarr' {
                 $apiEndpoint = 'series'
             }
-            "lidarr" {
+            'lidarr' {
                 $apiEndpoint = 'artist'
+            }
+            'readarr' {
+                $apiEndpoint = 'author'
             }
         }
 
@@ -879,7 +889,7 @@ function New-StarrTag {
         Creates a new tag in a Starr application.
 
     .DESCRIPTION
-        Creates a new tag in a Starr application (Radarr/Sonarr/Lidarr) using the API.
+        Creates a new tag in a Starr application (Lidarr/Radarr/Readarr/Sonarr) using the API.
         Returns the ID of the newly created tag.
 
     .PARAMETER ApiKey
@@ -889,7 +899,7 @@ function New-StarrTag {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Lidarr/Radarr/Readarr/Sonarr).
 
     .PARAMETER TagName
         The name of the tag to create.
@@ -1005,8 +1015,7 @@ function Read-ConfigurationFile {
         [ValidateScript({
                 if (-Not (Test-Path $_)) {
                     throw 'Config file not found'
-                }
-                else {
+                } else {
                     $true
                 }
             })]
@@ -1047,7 +1056,7 @@ function Remove-StarrMediaTag {
         Removes specified tag from media items in a Starr application.
 
     .DESCRIPTION
-        Removes a tag from specified media items in Radarr, Sonarr, or Lidarr using their respective APIs.
+        Removes a tag from specified media items in Lidarr, Radarr, Readarr or Sonarr using their respective APIs.
         Handles different media types (movies/series/artists) appropriately per application.
 
     .PARAMETER ApiKey
@@ -1057,7 +1066,7 @@ function Remove-StarrMediaTag {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Lidarr/Radarr/Readarr/Sonarr).
 
     .PARAMETER Media
         Array of media objects to remove the tag from.
@@ -1114,18 +1123,22 @@ function Remove-StarrMediaTag {
 
         # Determine the API endpoint and body based on the application
         switch -Regex ($application) {
-            "radarr" {
+            'radarr' {
                 $body = "{`"movieIds`":[$mediaId],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}"
                 $apiEndpoint = 'movie/editor'
             }
-            "sonarr" {
+            'sonarr' {
                 $body = "{`"seriesIds`":[$mediaId],`"tags`":[$tagId], `"applyTags`":`"remove`"}"
                 $apiEndpoint = 'series/editor'
 
             }
-            "lidarr" {
+            'lidarr' {
                 $body = "{`"artistIds`":[$mediaId],`"tags`":[$tagId], `"applyTags`":`"remove`"}"
                 $apiEndpoint = 'artist/editor'
+            }
+            'readarr' {
+                $body = "{`"authorIds`":[$mediaId],`"tags`":[$tagId], `"applyTags`":`"remove`"}"
+                $apiEndpoint = 'author/editor'
             }
         }
 
@@ -1379,9 +1392,8 @@ function Send-DiscordMessage {
 
     end {
         if ($statusCode -match '2\d\d') {
-            Write-Verbose "Discord message sent successfully"
-        }
-        else {
+            Write-Verbose 'Discord message sent successfully'
+        } else {
             Write-Warning "There was an error sending the Discord message. Status code: $statusCode"
             $discordMessage
         }
@@ -1591,14 +1603,12 @@ function Send-NotifiarrPassThroughNotification {
                 $notifiarrResponse = Invoke-RestMethod @notifiarrParams
 
                 if ($notifiarrResponse.result -eq 'success') {
-                    Write-Verbose "Notification successfully sent to Notifiarr"
-                }
-                else {
+                    Write-Verbose 'Notification successfully sent to Notifiarr'
+                } else {
                     Write-Warning 'Failed to send notification to Notifiarr'
                     throw "Server responded with status code:`r`n$notifiarrResponse"
                 }
-            }
-            catch {
+            } catch {
                 Write-Warning 'Unexpected error occurred while sending notification to Notifiarr'
                 throw $_.Exception.Message
             }
@@ -1614,11 +1624,12 @@ function Start-StarrMediaSearch {
         Initiates a search for media items in Starr applications.
 
     .DESCRIPTION
-        Triggers a search operation for specified media items in Radarr, Sonarr, or Lidarr.
+        Triggers a search operation for specified media items in Lidarr, Radarr, Readarr or Sonarr.
         Handles different media types appropriately:
-        - Radarr: Movies search
-        - Sonarr: Series search
         - Lidarr: Artist search
+        - Radarr: Movies search
+        - Readarr: Author search
+        - Sonarr: Series search
 
     .PARAMETER ApiKey
         The API key for the Starr application.
@@ -1627,7 +1638,7 @@ function Start-StarrMediaSearch {
         The API version of the Starr application (e.g., 'v3').
 
     .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr/Lidarr).
+        The name of the Starr application (Lidarr/Radarr/Readarr/Sonarr).
 
     .PARAMETER Media
         Array of media objects to search for.
@@ -1682,14 +1693,17 @@ function Start-StarrMediaSearch {
 
         # Determine the API endpoint and body based on the application
         switch -Regex ($application) {
-            "radarr" {
+            'radarr' {
                 $body = "{`"name`":`"MoviesSearch`", `"movieIds`":[$mediaId]}"
             }
-            "sonarr" {
+            'sonarr' {
                 $body = "{`"name`":`"SeriesSearch`", `"seriesId`":$mediaId}"
             }
-            "lidarr" {
+            'lidarr' {
                 $body = "{`"name`":`"ArtistSearch`", `"artistId`":$mediaId}"
+            }
+            'readarr' {
+                $body = "{`"name`":`"AuthorSearch`", `"authorId`":$mediaId}"
             }
         }
 
@@ -1726,11 +1740,11 @@ if ($PSCmdlet.ShouldProcess($configurationFile, 'Reading configuration file')) {
 }
 
 # Validate the overall configuration file to make sure there are no quotes in the configuration values
-if ($PSCmdlet.ShouldProcess($configurationFile, "Checking that no quotes are present in the configuration file")) {
+if ($PSCmdlet.ShouldProcess($configurationFile, 'Checking that no quotes are present in the configuration file')) {
     $confirmAllSections = Confirm-Configuration -Configuration $configuration -Section 'Quotes'
 
     if (-Not ($confirmAllSections)) {
-        throw "One or more configuration sections are not configured correctly, please correct any warnings and try again"
+        throw 'One or more configuration sections are not configured correctly, please correct any warnings and try again'
     }
 }
 
@@ -1739,7 +1753,7 @@ if ($PSCmdlet.ShouldProcess($configurationFile, "Validating `"Notifications`" se
     $confirmNotificationsSection = Confirm-Configuration -Configuration $configuration -Section 'Notifications'
 
     if (-Not ($confirmNotificationsSection)) {
-        throw "Notifications section is not configured correctly, please correct any warnings and try again"
+        throw 'Notifications section is not configured correctly, please correct any warnings and try again'
     }
 
     if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.DiscordWebhook)) {
@@ -1768,7 +1782,7 @@ foreach ($application in $applicationList) {
     $applicationName = (Get-Culture).TextInfo.ToTitleCase($application)
 
     # Validate the application being processed
-    if ($PSCmdlet.ShouldProcess($applicationName, "Validating application")) {
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Validating application')) {
         Confirm-Application -Application $applicationName
     }
 
@@ -1791,9 +1805,10 @@ foreach ($application in $applicationList) {
             IgnoreTag      = if ([string]::IsNullOrWhiteSpace($configuration.$application.IgnoreTag)) { $null } else { $configuration.$application.IgnoreTag }
             Monitored      = [System.Convert]::ToBoolean($configuration.$application.Monitored)
             Status         = switch -Regex ($application) {
-                "radarr" { if ([string]::IsNullOrWhiteSpace($configuration.$application.MovieStatus)) { $null } else { $configuration.$application.MovieStatus } }
-                "sonarr" { if ([string]::IsNullOrWhiteSpace($configuration.$application.SeriesStatus)) { $null } else { $configuration.$application.SeriesStatus } }
-                "lidarr" { if ([string]::IsNullOrWhiteSpace($configuration.$application.ArtistStatus)) { $null } else { $configuration.$application.ArtistStatus } }
+                'radarr' { if ([string]::IsNullOrWhiteSpace($configuration.$application.MovieStatus)) { $null } else { $configuration.$application.MovieStatus } }
+                'sonarr' { if ([string]::IsNullOrWhiteSpace($configuration.$application.SeriesStatus)) { $null } else { $configuration.$application.SeriesStatus } }
+                'lidarr' { if ([string]::IsNullOrWhiteSpace($configuration.$application.ArtistStatus)) { $null } else { $configuration.$application.ArtistStatus } }
+                'readarr' { if ([string]::IsNullOrWhiteSpace($configuration.$application.AuthorStatus)) { $null } else { $configuration.$application.AuthorStatus } }
             }
             QualityProfile = if ([string]::IsNullOrWhiteSpace($configuration.$application.QualityProfileName)) { $null } else { $configuration.$application.QualityProfileName }
             TagName        = $configuration.$application.TagName
@@ -1805,19 +1820,19 @@ foreach ($application in $applicationList) {
     Write-Host "$applicationName is a valid application and its configuration has been validated" -ForegroundColor Green
 
     # Retrieve the API version
-    if ($PSCmdlet.ShouldProcess($applicationName, "Retrieving API version")) {
-        $applicationConfiguration["ApiVersion"] = Get-StarrApiVersion -ApiKey $applicationConfiguration.ApiKey -Application $applicationName -Url $applicationConfiguration.Url
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Retrieving API version')) {
+        $applicationConfiguration['ApiVersion'] = Get-StarrApiVersion -ApiKey $applicationConfiguration.ApiKey -Application $applicationName -Url $applicationConfiguration.Url
     }
 
     # Retrieve the Tag Id based on the tag name
-    if ($PSCmdlet.ShouldProcess($applicationName, "Retrieving Tag ID")) {
-        $applicationConfiguration["TagId"] = Get-StarrItemId -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -TagName $applicationConfiguration.TagName -Url $applicationConfiguration.Url
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Retrieving Tag ID')) {
+        $applicationConfiguration['TagId'] = Get-StarrItemId -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -TagName $applicationConfiguration.TagName -Url $applicationConfiguration.Url
     }
 
     # Retrieve the Tag Id to ignore based on the tag name
-    if ($PSCmdlet.ShouldProcess($applicationName, "Retrieving Tag ID to ignore")) {
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Retrieving Tag ID to ignore')) {
         if (-Not [string]::IsNullOrWhiteSpace($applicationConfiguration.IgnoreTag)) {
-            $applicationConfiguration["IgnoreTagId"] = Get-StarrItemId -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -TagName $applicationConfiguration.IgnoreTag -Url $applicationConfiguration.Url
+            $applicationConfiguration['IgnoreTagId'] = Get-StarrItemId -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -TagName $applicationConfiguration.IgnoreTag -Url $applicationConfiguration.Url
 
             if ($applicationConfiguration.TagId -eq $applicationConfiguration.IgnoreTagId) {
                 throw "Tag ID for `"$($applicationConfiguration.TagName)`" and `"$($applicationConfiguration.IgnoreTag)`" are the same, please correct this in the configuration file"
@@ -1826,21 +1841,21 @@ foreach ($application in $applicationList) {
     }
 
     # Retrieve the Quality Profile Id based on the quality profile name
-    if ($PSCmdlet.ShouldProcess($applicationName, "Retrieving Quality Profile ID")) {
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Retrieving Quality Profile ID')) {
         if (-Not [string]::IsNullOrWhiteSpace($applicationConfiguration.QualityProfile)) {
-            $applicationConfiguration["QualityProfileId"] = Get-StarrItemId -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -QualityProfileName $applicationConfiguration.QualityProfile -Url $applicationConfiguration.Url
+            $applicationConfiguration['QualityProfileId'] = Get-StarrItemId -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -QualityProfileName $applicationConfiguration.QualityProfile -Url $applicationConfiguration.Url
         }
     }
 
     # Retrieve all media items
-    if ($PSCmdlet.ShouldProcess($applicationName, "Retrieving all media")) {
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Retrieving all media')) {
         $allMedia = Get-StarrMedia -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Url $applicationConfiguration.Url
 
         Write-Verbose "Retrieved a total of $($allMedia.Count) media items from $applicationName"
     }
 
     # Filter media based on configuration values
-    if ($PSCmdlet.ShouldProcess($applicationName, "Filtering media based on configuration values")) {
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Filtering media based on configuration values')) {
         $filteredMedia = Select-StarrMedia -Media $allMedia -ApplicationConfiguration $applicationConfiguration
 
         # If the initial filtering yields no results, check if the script is running in unattended mode
@@ -1870,25 +1885,32 @@ foreach ($application in $applicationList) {
             else {
                 # Set the embed color and thumbnail based on the application
                 switch -Regex ($application) {
-                    "radarr" {
+                    'radarr' {
                         $thumbnail = 'https://gh.notifiarr.com/images/icons/radarr.png'
                         $color = @{
                             Html    = 'FFC230'
                             Decimal = '16761392'
                         }
                     }
-                    "sonarr" {
+                    'sonarr' {
                         $thumbnail = 'https://gh.notifiarr.com/images/icons/sonarr.png'
                         $color = @{
                             Html    = '00CCFF'
                             Decimal = '52479'
                         }
                     }
-                    "lidarr" {
+                    'lidarr' {
                         $thumbnail = 'https://gh.notifiarr.com/images/icons/lidarr.png'
                         $color = @{
                             Html    = '009252'
                             Decimal = '37458'
+                        }
+                    }
+                    'readarr' {
+                        $thumbnail = 'https://gh.notifiarr.com/images/icons/readarr.png'
+                        $color = @{
+                            Html    = '8E2222'
+                            Decimal = '9314850'
                         }
                     }
                     default {
@@ -1934,59 +1956,64 @@ foreach ($application in $applicationList) {
     }
 
     # Select random media to search based on the value of the count configuration
-    if ($PSCmdlet.ShouldProcess($applicationName, "Selecting media to search based on count")) {
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Selecting media to search based on count')) {
         if ($applicationConfiguration.Count -eq 'max') {
-            Write-Verbose "No count specified, returning all filtered media"
+            Write-Verbose 'No count specified, returning all filtered media'
             $mediaToSearch = $filteredMedia
-        }
-        else {
+        } else {
             Write-Verbose "Filtering media based on count: $($applicationConfiguration.Count)"
             $mediaToSearch = Get-Random -InputObject $filteredMedia -Count $applicationConfiguration.Count
         }
     }
 
     # Start the search for media items
-    if ($PSCmdlet.ShouldProcess($applicationName, "Starting search for media items")) {
-        # Sonarr/Lidarr API only supports searching one item at a time, so we need to loop through each media item in $mediaToSearch
-        if ($applicationName -match 'sonarr|lidarr') {
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Starting search for media items')) {
+        # Lidarr/Readarr/Sonarr API only supports searching one item at a time, so we need to loop through each media item in $mediaToSearch
+        if ($applicationName -match 'sonarr|lidarr|readarr') {
             foreach ($mediaItem in $mediaToSearch) {
                 Start-StarrMediaSearch -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Media $mediaItem -Url $applicationConfiguration.Url
             }
-        }
-        else {
+        } else {
             Start-StarrMediaSearch -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Media $mediaToSearch -Url $applicationConfiguration.Url
         }
     }
 
     # Add the tag to the media items that were searched
-    if ($PSCmdlet.ShouldProcess($applicationName, "Adding tag to media items")) {
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Adding tag to media items')) {
         Add-StarrMediaTag -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Media $mediaToSearch -TagId $applicationConfiguration.TagId -Url $applicationConfiguration.Url
     }
 
     # Send a notification to the enabled services
-    if ($PSCmdlet.ShouldProcess($applicationName, "Sending notification to enabled services")) {
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Sending notification to enabled services')) {
         $titleList = [System.Collections.Generic.List[string]]::new()
 
         switch -Regex ($application) {
-            "radarr" {
+            'radarr' {
                 $thumbnail = 'https://gh.notifiarr.com/images/icons/radarr.png'
                 $color = @{
                     Html    = 'FFC230'
                     Decimal = '16761392'
                 }
             }
-            "sonarr" {
+            'sonarr' {
                 $thumbnail = 'https://gh.notifiarr.com/images/icons/sonarr.png'
                 $color = @{
                     Html    = '00CCFF'
                     Decimal = '52479'
                 }
             }
-            "lidarr" {
+            'lidarr' {
                 $thumbnail = 'https://gh.notifiarr.com/images/icons/lidarr.png'
                 $color = @{
                     Html    = '009252'
                     Decimal = '37458'
+                }
+            }
+            'readarr' {
+                $thumbnail = 'https://gh.notifiarr.com/images/icons/readarr.png'
+                $color = @{
+                    Html    = '8E2222'
+                    Decimal = '9314850'
                 }
             }
             default {
@@ -2003,9 +2030,12 @@ foreach ($application in $applicationList) {
 "@
 
         foreach ($mediaItem in $mediaToSearch) {
-            if ($application -match $lidarr) {
+            if ($application -match 'lidarr') {
                 $descriptionField += "`r`n- $($mediaItem.artistName)"
                 $titleList.Add("`n- $($mediaItem.artistName)")
+            } elseif ($application -match 'readarr') {
+                $descriptionField += "`r`n- $($mediaItem.authorName)"
+                $titleList.Add("`n- $($mediaItem.authorName)")
             }
             else {
                 $descriptionField += "`r`n- $($mediaItem.title)"

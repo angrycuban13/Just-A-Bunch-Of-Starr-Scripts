@@ -31,6 +31,10 @@ Let's say you recently started using TRaSH Guides. Now you are wondering if the 
   * Sonarr V4:
     * Sonarr &rarr; Settings &rarr; Profiles &rarr; Quality Profile &rarr; Upgrade Until Custom Format Score
       * `Upgrade Until Custom Format Score` set to at least `10000`.
+* Lidarr
+  * Lidarr &rarr; Settings &rarr; Profiles &rarr; Profiles &rarr; Quality Profile &rarr; Upgrade Until Custom Format Score `Upgrade Until Custom Format Score` set to at least `10000`.
+* Readarr
+  * Readarr &rarr; Settings &rarr; Profiles &rarr; Profiles &rarr; Quality Profile &rarr; Upgrade Until Custom Format Score `Upgrade Until Custom Format Score` set to at least `10000`.
 
 > [!TIP]
 > Use [TRaSH Guides](https://trash-guides.info/).
@@ -53,7 +57,6 @@ Let's say you recently started using TRaSH Guides. Now you are wondering if the 
 | DiscordWebhook | Discord webhook to send notifications                                                                  | ""            |alphanumeric string                  |
 | NotifiarrPassthroughWebhook | Notifiarr Passthrough integration webhook to send notifications                                                                  | ""            |alphanumeric string                  |
 | NotifiarrPassthroughDiscordChannelId | Channel ID where Notifiarr Passthrough will send notifications to                                                                  | ""            |alphanumeric string                  |
-
 
 ### Radarr Configuration Attributes
 
@@ -92,9 +95,22 @@ Let's say you recently started using TRaSH Guides. Now you are wondering if the 
 | Count        | Number of artists to be searched                                                                           | 5             | integer > 0                         |
 | IgnoreTag     | Used for filtering artists - artists with this tag name will not be searched                                                           | ""            | alphanumeric string                 |
 | Monitored    | Used for filtering artists - search monitored or unmonitored artists                                                             | true          | boolean (true/false)                |
-| TagName      | Name of the Tag that will be applied to the Series after they are  searched.                              | ""            | alphanumeric string                 |
+| TagName      | Name of the Tag that will be applied to the Artists after they are  searched.                              | ""            | alphanumeric string                 |
 | Unattended   | Run the script in an infinite loop and search the library forever and  ever until the end of the Internet | false         | boolean (true/false)                |
-| Url          | Sonarr URL starting with "http(s)://" including baseurl and  port if required                             | ""            | URL                                 |
+| Url          | Lidarr URL starting with "http(s)://" including baseurl and  port if required                             | ""            | URL                                 |
+
+### Readarr Configuration Attributes
+
+| Attribute    | Description                                                                                               | Default Value | Allowed Values                      |
+| ------------ | --------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------- |
+| ApiKey       | Readarr API Key from Settings &rarr; General                                                                   | ""            | alphanumeric string                 |
+| ArtistStatus | Used for filtering artists - minimum `Author Status` to search                                                                           | ""            | <ul><li>`continuing`</li><li>`ended`</li></ul>               |
+| Count        | Number of authors to be searched                                                                           | 5             | integer > 0                         |
+| IgnoreTag     | Used for filtering authors - authors with this tag name will not be searched                                                           | ""            | alphanumeric string                 |
+| Monitored    | Used for filtering authors - search monitored or unmonitored artists                                                             | true          | boolean (true/false)                |
+| TagName      | Name of the Tag that will be applied to the Authors after they are  searched.                              | ""            | alphanumeric string                 |
+| Unattended   | Run the script in an infinite loop and search the library forever and  ever until the end of the Internet | false         | boolean (true/false)                |
+| Url          | Readarr URL starting with "http(s)://" including baseurl and  port if required                             | ""            | URL                                 |
 
 ## How To Use
 
@@ -212,7 +228,7 @@ pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -ApplicationLi
 * Create new task
 * Under the `General` tab
   * Give your task a name, e.g "Upgradinatorr Script"
-  * Set your security options appropiately (see warning below)
+  * Set your security options appropriately (see warning below)
 * Under the `Triggers` tab
   * Create a schedule of your choice
 * Under the `Actions` tab
@@ -227,7 +243,6 @@ pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -ApplicationLi
 
 > [!TIP]
 > Useful if you want to see what the script is going to do
-
 
 ```powershell
 pwsh /path/to/repo/clone/location/Upgradinatorr/upgradinatorr.ps1 -ApplicationList radarr -WhatIf
