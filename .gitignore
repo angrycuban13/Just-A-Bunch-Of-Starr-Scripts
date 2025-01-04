@@ -1,2 +1,9 @@
-.vscode
-Upgradinatorr/upgradinatorr.conf
+### PowerShell ###
+
+# Exclude Specific Scripts & Files
+Test.ps1
+
+# Configuration Files
+# Exclude all .conf files but keep example configs
+**/*.conf
+!**/*-example.conf
