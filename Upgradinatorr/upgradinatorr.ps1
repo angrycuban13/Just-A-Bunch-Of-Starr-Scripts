@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    Manages media upgrades by kicking off a manual search in Starr applications (Lidarr/Radarr/Readarr/Sonarr/Readarr).
+    Manages media upgrades by kicking off a manual search in Starr applications (Lidarr/Radarr/Readarr/Sonarr).
 
 .DESCRIPTION
     The Upgradinatorr script automates media upgrades in Starr applications by triggering a manual search for media items that meet specific criteria. While the Starr applications already look for better quality media, it only "searches forward". If you modify a Custom Format, media items that were previously ignored will not be picked up by the automatic search. This script allows you to manually look forward and backward to find media items that can be upgraded.
