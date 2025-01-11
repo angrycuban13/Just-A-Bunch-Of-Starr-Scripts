@@ -15,18 +15,32 @@ ZakTag is a Powershell script that automatically tags movies in Radarr with thei
 
 You should use this script if you want to keep track of how many movies from *X* release group are in your library.
 
+## Requirements
+
 * Powershell 7
   * To install Powershell 7, follow [this link](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7.2).
 
+## Script Parameters
+
+`ApplicationList` - Specifies which app(s) to use.
+
+`ConfigurationFile` - Specifies a path to the config file, defaults to `$PSScriptRoot\config.conf`.
+
+## Config File Attributes
+
+> [!WARNING]
+> Do not use any quotation marks within the config file
+
+### Radarr Configuration Attributes
+
+| Attribute     | Description                                                                                               | Default Value | Allowed Values                      |
+| -----------   | --------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------- |
+| ApiKey        | Radarr API Key from Settings &rarr; General                                                                   | ""            | alphanumeric string                 |
+| TagNamePrefix         | The prefix name for tags created by this script                                                                           | "ZakTag -"            | alphanumeric                         |
+| Url         | Radarr URL starting with "http(s)://" including baseurl and  port if required                               | ""            | URL                                 |
+
+
 ## How To Use
-
-### General
-
-> [!IMPORTANT]
-> Please fill in the variables in line 691-692:
-
-* `$radarrApiKey` - Your Radarr API Key
-* `$radarrUrl` - Your Radarr URL
 
 ### Linux
 

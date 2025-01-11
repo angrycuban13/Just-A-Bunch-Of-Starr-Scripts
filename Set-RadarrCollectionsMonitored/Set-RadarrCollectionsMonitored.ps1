@@ -1114,7 +1114,7 @@ foreach ($application in $applicationList) {
                     MessageTitle       = "Automatic Collection Monitoring - $applicationName"
                     MessageDescription = $descriptionField
                     Color              = '16761392'
-                    ThumbnailUrl       = 'https://gh.notifiarr.com/images/radarr.png'
+                    ThumbnailUrl       = 'https://gh.notifiarr.com/images/icons/radarr.png'
                     WebhookUrl         = $discordWebhookUrl
                 }
                 Send-DiscordMessage @params
@@ -1124,7 +1124,7 @@ foreach ($application in $applicationList) {
                 $params = @{
                     NotifiarrPassthroughApplicationName  = "Automatic Collection Monitoring - $applicationName"
                     NotifiarrPassthroughColor            = 'FFC230'
-                    NotifiarrPassthroughThumbnail        = 'https://gh.notifiarr.com/images/radarr.png'
+                    NotifiarrPassthroughThumbnail        = 'https://gh.notifiarr.com/images/icons/radarr.png'
                     NotifiarrPassthroughDescription      = $descriptionField
                     NotifiarrPassthroughDiscordChannelId = $notifiarrChannelId
                     NotifiarrPassthroughWebhook          = $notifiarrWebhookUrl
