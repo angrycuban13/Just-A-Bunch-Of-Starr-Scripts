@@ -9,13 +9,301 @@
     Author      : angrycuban13
     Dependencies: None
     Requires    : PowerShell 7+
-    Version     : 2.0
+    Version     : 3.0
 #>
 
 #Requires -Version 7
 
 [CmdletBinding(SupportsShouldProcess)]
-param ()
+param (
+    [Parameter(Mandatory = $true)]
+    [Alias('Apps', 'AppsList')]
+    [string[]]
+    $ApplicationList,
+
+    [Parameter(Mandatory = $false)]
+    [Alias('Config', 'ConfigFile')]
+    [System.IO.FileInfo]
+    $ConfigurationFile = (Join-Path -Path $PSScriptRoot -ChildPath 'zaktag.conf')
+)
+
+function Add-StarrMediaTag {
+    <#
+    .SYNOPSIS
+        Adds specified tag to media items in a Starr application.
+
+    .DESCRIPTION
+        Adds a tag to specified media items in Radarr or Sonarr using their respective APIs.
+        Handles different media types appropriately:
+        - Radarr: Movies tagging
+        - Sonarr: Series tagging
+
+    .PARAMETER ApiKey
+        The API key for the Starr application.
+
+    .PARAMETER ApiVersion
+        The API version of the Starr application (e.g., 'v3').
+
+    .PARAMETER Application
+        The name of the Starr application (Radarr/Sonarr).
+
+    .PARAMETER Media
+        Array of media objects to add the tag to.
+
+    .PARAMETER TagId
+        The ID of the tag to add.
+
+    .PARAMETER Url
+        The base URL of the Starr application (e.g., http://localhost:7878).
+
+    .EXAMPLE
+        Add-StarrMediaTag -ApiKey "1234..." -ApiVersion "v3" -Application "Radarr" -Media $movieArray -TagId 1 -Url "http://localhost:7878"
+        # Adds tag ID 1 to specified movies in Radarr
+
+    .EXAMPLE
+        Add-StarrMediaTag -ApiKey "1234..." -ApiVersion "v3" -Application "Sonarr" -Media $seriesArray -TagId 2 -Url "http://localhost:8989"
+        # Adds tag ID 2 to specified series in Sonarr
+
+    .OUTPUTS
+        None. Displays verbose message when tag is added.
+
+    .NOTES
+        - Requires valid API key and accessible application URL
+        - Uses Confirm-StarrApiResponse for error handling
+        - Supports batch operations via media array
+        - Tag operations are processed synchronously
+    #>
+
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ApiKey,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $ApiVersion,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Application,
+
+        [Parameter(Mandatory = $true)]
+        [System.Object[]]
+        $Media,
+
+        [Parameter(Mandatory = $true)]
+        [int]
+        $TagId,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Url
+    )
+
+    begin {
+        # Join media IDs into a comma-separated string
+        $mediaId = $media.id -join ','
+
+        # Determine the API endpoint and body based on the application
+        switch -Regex ($application) {
+            'radarr' {
+                $body = "{`"movieIds`":[$mediaId],`"tags`":[$($tagId)],`"applyTags`":`"add`"}"
+                $apiEndpoint = 'movie/editor'
+            }
+            'sonarr' {
+                $body = "{`"seriesIds`":[$mediaId],`"tags`":[$tagId],`"applyTags`":`"add`"}"
+                $apiEndpoint = 'series/editor'
+
+            }
+        }
+
+        # Create a splat for Invoke-RestMethod
+        $params = @{
+            Headers            = @{
+                'X-Api-Key' = $apiKey
+            }
+            Method             = 'Put'
+            Uri                = "$url/api/$apiVersion/$apiEndpoint"
+            StatusCodeVariable = 'statusCode'
+            SkipHttpErrorCheck = $true
+            Body               = $body
+            ContentType        = 'application/json'
+        }
+    }
+
+    process {
+        # Make the API call to add the tag to media items
+        $apiResponse = Invoke-RestMethod @params
+    }
+
+    end {
+        # Check the response status code and display success message if successful
+        if (Confirm-StarrApiResponse -Application $application -Function $MyInvocation.MyCommand -StatusCode $statusCode) {
+            Write-Verbose "Tag added to $($media.Count) media items in $application"
+        }
+    }
+}
+
+function Confirm-Application {
+    <#
+    .SYNOPSIS
+        Validates if the specified application is a supported Starr application.
+
+    .DESCRIPTION
+        The Confirm-Application function checks if the provided application name
+        is one of the supported Starr applications (Radarr or Sonarr).
+        It performs a case-insensitive validation using regex pattern matching.
+
+    .PARAMETER Application
+        The name of the application to validate. Must be one of: radarr, sonarr.
+        This parameter is case-insensitive.
+
+    .EXAMPLE
+        Confirm-Application -Application "radarr"
+        # Validates that radarr is a supported application
+
+    .EXAMPLE
+        Confirm-Application -Application "plex"
+        # Throws an error as plex is not a supported application
+
+    .OUTPUTS
+        None. The function throws an error if the application is not supported.
+
+    .NOTES
+        Supported applications:
+        - Radarr
+        - Sonarr
+    #>
+
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Application
+    )
+
+    begin {}
+
+    process {
+        switch -Regex ($application) {
+            'radarr' {
+                Write-Verbose "$application is a supported application"
+            }
+            default {
+                throw "$application is not a supported application"
+            }
+        }
+    }
+
+    end {}
+}
+
+function Confirm-Configuration {
+    <#
+    .SYNOPSIS
+        Validates configuration settings for Starr applications (Radarr/Sonarr) and notification services.
+
+    .DESCRIPTION
+        The Confirm-Configuration function performs comprehensive validation of configuration settings for *arr applications and notification services. It checks:
+        - API key format and length
+        - URL formatting
+
+    .PARAMETER Configuration
+        PSCustomObject containing the configuration settings to validate. Should include sections for each application
+        and notifications with their respective settings.
+
+    .PARAMETER Section
+        String specifying which section to validate. Can be 'Quotes', or an application name (e.g., 'Radarr').
+
+    .EXAMPLE
+        $config  = Read-ConfigurationFile -File "config.ini"
+        $isValid = Confirm-Configuration -Configuration $config -Section "Quotes"
+        # Validates entire configuration including quote checks
+
+    .EXAMPLE
+        $isValid = Confirm-Configuration -Configuration $config -Section "Radarr"
+        # Validates Radarr-specific settings including API key, URL, and movie status
+
+    .OUTPUTS
+        [Boolean]
+        Returns $true if all validations pass, $false if any validation fails.
+
+    .NOTES
+        Validation Rules:
+        - API Keys must be 32 characters
+        - URLs must start with http: // or https://
+    #>
+
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [PSCustomObject]
+        $Configuration,
+
+        [Parameter(Mandatory = $true)]
+        [String]
+        $Section
+    )
+
+    begin {
+        $errorCount = 0
+        $urlRegexMatch = '^(http|https)://'
+    }
+
+    process {
+        # Add quote validation before other checks
+        if ($section -eq 'Quotes') {
+            $configuration.PSObject.Properties | ForEach-Object {
+                $sectionName = $_.Name
+                $sectionValues = $_.Value
+
+                foreach ($configurationValue in $sectionValues.GetEnumerator()) {
+                    if ($configurationValue.Value -match '"') {
+                        Write-Warning "Configuration value for `"$($configurationValue.Key)`" in the $sectionName configuration contains quotes which are not allowed. Please remove all quotes from your configuration."
+                        $errorCount++
+                    }
+                }
+            }
+        }
+
+        # Validate the application sections
+        else {
+            $applicationName = $section
+            $applicationConfig = $configuration.$applicationName
+
+            # Validate API Key
+            Write-Verbose "Validating `"ApiKey`" for `"$applicationName`""
+            if ($applicationConfig.ApiKey.Length -ne 32) {
+                Write-Warning "API Key for `"$applicationName`" is not 32 characters long"
+                $errorCount++
+            }
+
+            # Validate TagName
+            Write-Verbose "Validating `"TagNamePrefix`" for `"$applicationName`""
+            if ([string]::IsNullOrWhiteSpace($applicationConfig.TagNamePrefix)) {
+                Write-Warning "A tag name prefix must be specified for `"$applicationName`""
+                $errorCount++
+            }
+
+            # Validate URL
+            Write-Verbose "Validating `"URL`" for `"$applicationName`""
+            if ($applicationConfig.Url -notmatch $urlRegexMatch) {
+                Write-Warning "URL for `"$applicationName`" is not formatted correctly, it should start with either `"http://`" or `"https://`""
+                $errorCount++
+            }
+        }
+    }
+
+    end {
+        # Return $true if no errors were found, $false otherwise
+        if ($errorCount -gt 0) {
+            $false
+        } else {
+            $true
+        }
+    }
+}
 
 function Confirm-StarrApiResponse {
     <#
@@ -253,10 +541,10 @@ function Get-StarrMedia {
     begin {
         # Determine the API endpoint based on the application
         switch -Regex ($application) {
-            "radarr" {
+            'radarr' {
                 $apiEndpoint = 'movie'
             }
-            "sonarr" {
+            'sonarr' {
                 $apiEndpoint = 'series'
             }
         }
@@ -458,6 +746,82 @@ function New-StarrTag {
     }
 }
 
+function Read-ConfigurationFile {
+    <#
+    .SYNOPSIS
+        Reads and parses an INI configuration file into a PowerShell custom object.
+
+    .DESCRIPTION
+        The Read-ConfigurationFile function reads an INI-style configuration file and converts it into
+        a structured PowerShell custom object. It supports sections denoted by [SectionName] and
+        key-value pairs in the format key = value. Comments starting with semicolon (;) are ignored.
+
+    .PARAMETER File
+        The path to the INI configuration file to be parsed. The file must exist.
+
+    .EXAMPLE
+        $config = Read-ConfigurationFile -File "C:\config.ini"
+
+        # Example config.ini content:
+        # [Database]
+        # Server = localhost
+        # Port   = 1433
+
+        # Accessing the parsed config:
+        # $config.Database.Server    # Returns "localhost"
+        # $config.Database.Port      # Returns "1433"
+
+    .OUTPUTS
+        [PSCustomObject]
+        Returns a custom object where each section of the INI file becomes a property containing
+        a hashtable of the key-value pairs in that section.
+
+    .NOTES
+        The function validates that the specified file exists before processing.
+        Semi-colon prefixed lines are treated as comments and ignored.
+    #>
+
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true, Position = 0)]
+        [ValidateScript({
+                if (-Not (Test-Path $_)) {
+                    throw 'Config file not found'
+                } else {
+                    $true
+                }
+            })]
+        [String]
+        $File
+    )
+
+    begin {
+        $configFileContent = @{}
+    }
+
+    process {
+        switch -Regex -File ($file) {
+            '^\[(.+)\]$' {
+                $section = $matches[1].Trim()
+                $configFileContent[$section] = @{}
+            }
+
+            '^\s*([^#].+?)\s*=\s*(.*)' {
+                $name, $value = $matches[1..2]
+
+                # skip comments that start with semicolon:
+                if (-Not ($name.StartsWith(';'))) {
+                    $configFileContent[$section][$name] = $value.Trim()
+                }
+            }
+        }
+    }
+
+    end {
+        [PSCustomObject]$configFileContent
+    }
+}
+
 function Remove-StarrMediaTag {
     <#
     .SYNOPSIS
@@ -531,11 +895,11 @@ function Remove-StarrMediaTag {
 
         # Determine the API endpoint and body based on the application
         switch -Regex ($application) {
-            "radarr" {
+            'radarr' {
                 $body = "{`"movieIds`":[$mediaId],`"tags`":[$($tagId)],`"applyTags`":`"remove`"}"
                 $apiEndpoint = 'movie/editor'
             }
-            "sonarr" {
+            'sonarr' {
                 $body = "{`"seriesIds`":[$mediaId],`"tags`":[$tagId], `"applyTags`":`"remove`"}"
                 $apiEndpoint = 'series/editor'
 
@@ -569,190 +933,122 @@ function Remove-StarrMediaTag {
     }
 }
 
-function Add-StarrMediaTag {
-    <#
-    .SYNOPSIS
-        Adds specified tag to media items in a Starr application.
 
-    .DESCRIPTION
-        Adds a tag to specified media items in Radarr or Sonarr using their respective APIs.
-        Handles different media types appropriately:
-        - Radarr: Movies tagging
-        - Sonarr: Series tagging
+if ($PSCmdlet.ShouldProcess($configurationFile, 'Reading configuration file')) {
+    $configuration = Read-ConfigurationFile -File $configurationFile
+}
 
-    .PARAMETER ApiKey
-        The API key for the Starr application.
+# Validate the overall configuration file to make sure there are no quotes in the configuration values
+if ($PSCmdlet.ShouldProcess($configurationFile, 'Checking that no quotes are present in the configuration file')) {
+    $confirmAllSections = Confirm-Configuration -Configuration $configuration -Section 'Quotes'
 
-    .PARAMETER ApiVersion
-        The API version of the Starr application (e.g., 'v3').
+    if (-Not ($confirmAllSections)) {
+        throw 'One or more configuration sections are not configured correctly, please correct any warnings and try again'
+    }
+}
 
-    .PARAMETER Application
-        The name of the Starr application (Radarr/Sonarr).
+<#
+When calling the script from the command line such as
+"pwsh.exe -File \\path\to\script.ps1 -ApplicationList 'app1, app2, app3'"
+due to limitations, arrays are passed as strings.
+This is why we need to split the string and trim the values https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh?view=powershell-7.4#-file---f
+#>
+$applicationList = ($applicationList -split ',').Trim()
 
-    .PARAMETER Media
-        Array of media objects to add the tag to.
+foreach ($application in $applicationList) {
+    $applicationName = (Get-Culture).TextInfo.ToTitleCase($application)
+    $releaseGroupsList = [System.Collections.Generic.List[string]]::new()
 
-    .PARAMETER TagId
-        The ID of the tag to add.
+    # Validate the application being processed
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Validating application')) {
+        Confirm-Application -Application $applicationName
+    }
 
-    .PARAMETER Url
-        The base URL of the Starr application (e.g., http://localhost:7878).
+    # Validate the application configuration
+    if ($PSCmdlet.ShouldProcess($configurationFile, "Validating `"$applicationName`" section")) {
+        $confirmApplicationConfiguration = Confirm-Configuration -Configuration $configuration -Section $applicationName
 
-    .EXAMPLE
-        Add-StarrMediaTag -ApiKey "1234..." -ApiVersion "v3" -Application "Radarr" -Media $movieArray -TagId 1 -Url "http://localhost:7878"
-        # Adds tag ID 1 to specified movies in Radarr
+        if (-Not ($confirmApplicationConfiguration)) {
+            throw "$applicationName is not configured correctly, please correct any warnings and try again"
+        }
 
-    .EXAMPLE
-        Add-StarrMediaTag -ApiKey "1234..." -ApiVersion "v3" -Application "Sonarr" -Media $seriesArray -TagId 2 -Url "http://localhost:8989"
-        # Adds tag ID 2 to specified series in Sonarr
+        else {
+            Write-Verbose "$applicationName settings are configured correctly"
+        }
 
-    .OUTPUTS
-        None. Displays verbose message when tag is added.
+        # Create a hashtable to store the application configuration
+        $applicationConfiguration = @{
+            ApiKey        = $configuration.$application.ApiKey
+            TagNamePrefix = $configuration.$application.TagNamePrefix
+            Url           = ($configuration.$application.Url).TrimEnd('/')
+        }
+    }
 
-    .NOTES
-        - Requires valid API key and accessible application URL
-        - Uses Confirm-StarrApiResponse for error handling
-        - Supports batch operations via media array
-        - Tag operations are processed synchronously
-    #>
+    Write-Host "$applicationName is a valid application and its configuration has been validated" -ForegroundColor Green
 
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $ApiKey,
+    # Retrieve the API version
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Retrieving API version')) {
+        $applicationConfiguration['ApiVersion'] = Get-StarrApiVersion -ApiKey $applicationConfiguration.ApiKey -Application $applicationName -Url $applicationConfiguration.Url
+    }
 
-        [Parameter(Mandatory = $true)]
-        [string]
-        $ApiVersion,
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Retrieving all movies')) {
+        $allMovies = Get-StarrMedia -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Url $applicationConfiguration.Url
+    }
 
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Application,
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Retrieving all existing tags')) {
+        $allExistingTags = Get-StarrMediaTags -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Url $applicationConfiguration.Url
+    }
 
-        [Parameter(Mandatory = $true)]
-        [System.Object[]]
-        $Media,
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Filtering results to only movies with existing files')) {
+        $allMoviesWithFiles = $allMovies | Where-Object { $_.hasFile -eq $true }
+    }
 
-        [Parameter(Mandatory = $true)]
-        [int]
-        $TagId,
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Processing existing release groups')) {
+        $uniqueReleaseGroups = $allMoviesWithFiles.movieFile.releaseGroup | Sort-Object -Unique
 
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Url
-    )
+        foreach ($releaseGroup in $uniqueReleaseGroups) {
+            $tagName = "$($applicationConfiguration.TagNamePrefix) $releaseGroup"
+            $releaseGroupsList.Add($tagName)
+        }
+    }
 
-    begin {
-        # Join media IDs into a comma-separated string
-        $mediaId = $media.id -join ','
-
-        # Determine the API endpoint and body based on the application
-        switch -Regex ($application) {
-            "radarr" {
-                $body = "{`"movieIds`":[$mediaId],`"tags`":[$($tagId)],`"applyTags`":`"add`"}"
-                $apiEndpoint = 'movie/editor'
-            }
-            "sonarr" {
-                $body = "{`"seriesIds`":[$mediaId],`"tags`":[$tagId],`"applyTags`":`"add`"}"
-                $apiEndpoint = 'series/editor'
-
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Creating missing tags')) {
+        # Loop through each release group and check if the tag exists in Radarr, if not create it
+        foreach ($releaseGroup in $releaseGroupsList) {
+            if ($allExistingTags.label -notcontains $releaseGroup) {
+                New-StarrTag -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -TagName $releaseGroup -Url $applicationConfiguration.Url
             }
         }
 
-        # Create a splat for Invoke-RestMethod
-        $params = @{
-            Headers            = @{
-                'X-Api-Key' = $apiKey
+        # Retrieve tags again so it includes the newly added release group tags
+        $allExistingTags = Get-StarrMediaTags -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Url $applicationConfiguration.Url
+    }
+
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Filtering tags to only release group tags')) {
+        # Loop through each existing tag and select release groups tags only to avoid including previously defined tags
+        $releaseGroupTagsOnly = $allExistingTags | Where-Object { $_.label -like "$($applicationConfiguration.TagNamePrefix)*" }
+    }
+
+    if ($PSCmdlet.ShouldProcess($applicationName, 'Tagging movies with their corresponding release group tag')) {
+        # Loop through each movie
+        foreach ($movie in $allMoviesWithFiles) {
+            $existingReleaseGroupTags = $releaseGroupTagsOnly | Where-Object { $movie.tags -contains $_.id }
+            $tagToApply = $releaseGroupTagsOnly | Where-Object { $_.label -eq "$($applicationConfiguration.TagNamePrefix) $($movie.movieFile.releaseGroup)" }
+
+            if ($movie.tags -contains $tagToApply.id) {
+                Write-Verbose "Movie `"$($movie.title)`" already has tag: `"$($tagToApply.label)`""
+                continue
             }
-            Method             = 'Put'
-            Uri                = "$url/api/$apiVersion/$apiEndpoint"
-            StatusCodeVariable = 'statusCode'
-            SkipHttpErrorCheck = $true
-            Body               = $body
-            ContentType        = 'application/json'
+
+            if ($null -ne $existingReleaseGroupTags) {
+                Write-Warning "Removing tag `"$($existingReleaseGroupTags.label)`" from `"$($movie.title)`""
+
+                Remove-StarrMediaTag -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Media $movie -TagId $existingReleaseGroupTags.id -Url $applicationConfiguration.Url
+            }
+
+            Add-StarrMediaTag -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Media $movie -TagId $tagToApply.id -Url $applicationConfiguration.Url
+
+            Write-Host "Added tag `"$($tagToApply.label)`" to `"$($movie.title)`"" -ForegroundColor Cyan
         }
-    }
-
-    process {
-        # Make the API call to add the tag to media items
-        $apiResponse = Invoke-RestMethod @params
-    }
-
-    end {
-        # Check the response status code and display success message if successful
-        if (Confirm-StarrApiResponse -Application $application -Function $MyInvocation.MyCommand -StatusCode $statusCode) {
-            Write-Verbose "Tag added to $($media.Count) media items in $application"
-        }
-    }
-}
-
-
-#------------- DEFINE VARIABLES -------------#
-
-$radarrApiKey = ""
-$radarrUrl = ""
-$tagNamePrefix = "ZakTag -"
-$releaseGroupsList = [System.Collections.Generic.List[string]]::new()
-
-#------------- SCRIPT STARTS -------------#
-
-if ($PSCmdlet.ShouldProcess("Radarr", "Retrieving API version")) {
-    $apiVersion = Get-StarrApiVersion -ApiKey $radarrApiKey -Application "Radarr" -Url $radarrUrl
-}
-
-if ($PSCmdlet.ShouldProcess("Radarr", "Retrieving all movies")) {
-    $allMovies = Get-StarrMedia -ApiKey $radarrApiKey -ApiVersion $apiVersion -Application "Radarr" -Url $radarrUrl
-}
-
-if ($PSCmdlet.ShouldProcess("Radarr", "Filtering results to only movies with existing files")) {
-    $allMoviesWithFiles = $allMovies | Where-Object { $_.hasFile -eq $true }
-    $uniqueReleaseGroups = $allMoviesWithFiles.movieFile.releaseGroup | Sort-Object -Unique
-    foreach ($releaseGroup in $uniqueReleaseGroups) {
-        $tagName = "$tagNamePrefix $releaseGroup"
-        $releaseGroupsList.Add($tagName)
-    }
-}
-
-if ($PSCmdlet.ShouldProcess("Radarr", "Retrieving all existing tags")) {
-    $allExistingTags = Get-StarrMediaTags -ApiKey $radarrApiKey -ApiVersion $apiVersion -Application "Radarr" -Url $radarrUrl
-}
-
-if ($PSCmdlet.ShouldProcess("Radarr", "Creating missing tags")) {
-    # Loop through each release group and check if the tag exists in Radarr, if not create it
-    foreach ($releaseGroup in $releaseGroupsList) {
-        if ($allExistingTags.label -notcontains $releaseGroup) {
-            New-StarrTag -ApiKey $radarrApiKey -ApiVersion $apiVersion -Application "Radarr" -TagName $releaseGroup -Url $radarrUrl
-        }
-    }
-
-    # Retrieve tags again so it includes the newly added release group tags
-    $allExistingTags = Get-StarrMediaTags -ApiKey $radarrApiKey -ApiVersion $apiVersion -Application "Radarr" -Url $radarrUrl
-}
-
-if ($PSCmdlet.ShouldProcess("Radarr", "Filtering tags to only release group tags")) {
-    # Loop through each existing tag and select release groups tags only to avoid including previously defined tags
-    $releaseGroupTagsOnly = $allExistingTags | Where-Object { $_.label -like "$tagNamePrefix*" }
-}
-
-if ($PSCmdlet.ShouldProcess("Radarr", "Tagging movies with their corresponding release group tag")) {
-    # Loop through each movie
-    foreach ($movie in $allMoviesWithFiles) {
-        $existingReleaseGroupTags = $releaseGroupTagsOnly | Where-Object { $movie.tags -contains $_.id }
-        $tagToApply = $releaseGroupTagsOnly | Where-Object { $_.label -eq "$tagNamePrefix $($movie.movieFile.releaseGroup)" }
-
-        if ($movie.tags -contains $tagToApply.id) {
-            Write-Host "Movie `"$($movie.title)`" already has tag: `"$($tagToApply.label)`"" -ForegroundColor Green
-            continue
-        }
-
-        if ($null -ne $existingReleaseGroupTags) {
-            Write-Warning "Removing tag `"$($existingReleaseGroupTags.label)`" from `"$($movie.title)`""
-            Remove-StarrMediaTag -ApiKey $radarrApiKey -ApiVersion $apiVersion -Application "Radarr" -Media $movie -TagId $existingReleaseGroupTags.id -Url $radarrUrl
-        }
-
-        Add-StarrMediaTag -ApiKey $radarrApiKey -ApiVersion $apiVersion -Application "Radarr" -Media $movie -TagId $tagToApply.id -Url $radarrUrl
-
-        Write-Host "Added tag `"$($tagToApply.label)`" to `"$($movie.title)`"" -ForegroundColor Cyan
     }
 }
