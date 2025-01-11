@@ -8,3 +8,13 @@ These scripts interact directly with the Radarr/Sonarr/Lidarr API. They were cre
 * [Set-RadarrCollectionsMonitored](https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Set-RadarrCollectionsMonitored/README.md)
 * [Upgradinatorr](https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/Upgradinatorr/README.md)
 * [ZakTag](https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts/blob/main/ZakTag/README.md)
+
+## Star History
+
+<a href="https://star-history.com/#angrycuban13/Just-A-Bunch-Of-Starr-Scripts&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=angrycuban13/Just-A-Bunch-Of-Starr-Scripts&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=angrycuban13/Just-A-Bunch-Of-Starr-Scripts&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=angrycuban13/Just-A-Bunch-Of-Starr-Scripts&type=Date" />
+ </picture>
+</a>
