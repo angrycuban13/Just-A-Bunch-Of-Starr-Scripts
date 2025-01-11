@@ -1756,15 +1756,30 @@ if ($PSCmdlet.ShouldProcess($configurationFile, "Validating `"Notifications`" se
         throw 'Notifications section is not configured correctly, please correct any warnings and try again'
     }
 
-    if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.DiscordWebhook)) {
+    if ((-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.DiscordWebhook)) -or (-Not [string]::IsNullOrWhiteSpace($configuration.General.DiscordWebhook))) {
         $sendDiscordNotification = $true
-        $discordWebhookUrl = $configuration.Notifications.DiscordWebhook
+
+        if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.DiscordWebhook)) {
+            $discordWebhookUrl = $configuration.Notifications.DiscordWebhook
+        }
+
+        if (-Not [string]::IsNullOrWhiteSpace($configuration.General.DiscordWebhook)) {
+            $discordWebhookUrl = $configuration.General.DiscordWebhook
+        }
     }
 
-    if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.NotifiarrPassthroughWebhook)) {
+    if ((-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.NotifiarrPassthroughWebhook)) -or (-Not [string]::IsNullOrWhiteSpace($configuration.General.NotifiarrPassthroughWebhook))) {
         $sendNotifiarrNotification = $true
-        $notifiarrWebhookUrl = $configuration.Notifications.NotifiarrPassthroughWebhook
-        $notifiarrChannelId = $configuration.Notifications.NotifiarrPassthroughDiscordChannelId
+
+        if (-Not [string]::IsNullOrWhiteSpace($configuration.Notifications.NotifiarrPassthroughWebhook)) {
+            $notifiarrWebhookUrl = $configuration.Notifications.NotifiarrPassthroughWebhook
+            $notifiarrChannelId = $configuration.Notifications.NotifiarrPassthroughDiscordChannelId
+        }
+
+        if (-Not [string]::IsNullOrWhiteSpace($configuration.General.NotifiarrPassthroughWebhook)) {
+            $notifiarrWebhookUrl = $configuration.General.NotifiarrPassthroughWebhook
+            $notifiarrChannelId = $configuration.General.NotifiarrPassthroughDiscordChannelId
+        }
     }
 }
 
