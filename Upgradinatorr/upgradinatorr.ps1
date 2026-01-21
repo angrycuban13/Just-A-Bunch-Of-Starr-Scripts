@@ -388,7 +388,8 @@ function Confirm-Configuration {
                         Write-Warning "Count for `"$applicationName`" is not a valid value, it should be greater than 0 or equal to `"max`""
                         $errorCount++
                     }
-                } catch {
+                }
+                catch {
                     Write-Warning "Count for `"$applicationName`" is not a valid value, it should be an integer or equal to `"max`""
                     $errorCount++
                 }
@@ -461,7 +462,8 @@ function Confirm-Configuration {
         # Return $true if no errors were found, $false otherwise
         if ($errorCount -gt 0) {
             $false
-        } else {
+        }
+        else {
             $true
         }
     }
@@ -873,6 +875,7 @@ function Get-StarrMedia {
     process {
         # Make the API call to get all media items
         $apiResponse = Invoke-RestMethod @params
+        write-host $apiResponse
     }
 
     end {
@@ -1015,7 +1018,8 @@ function Read-ConfigurationFile {
         [ValidateScript({
                 if (-Not (Test-Path $_)) {
                     throw 'Config file not found'
-                } else {
+                }
+                else {
                     $true
                 }
             })]
@@ -1248,7 +1252,6 @@ function Select-StarrMedia {
 
         else {
             Write-Verbose "Filtering media to only include media without the tag `"$($applicationConfiguration.TagName)`" and that are monitored"
-
             # Filter media to only include media without the specified tag
             $filteredMedia = $media | Where-Object { $_.monitored -eq $applicationConfiguration.Monitored -and $_.tags -notcontains $applicationConfiguration.TagId }
 
@@ -1264,16 +1267,50 @@ function Select-StarrMedia {
                 $filteredMedia = $filteredMedia | Where-Object { $_.qualityProfileId -eq $applicationConfiguration.QualityProfileId }
             }
 
-            # If "IgnoreTagId" is specified, filter media to exclude media with the specified tag
-            if ($null -ne $applicationConfiguration.IgnoreTagId) {
-                Write-Verbose "Filtering media based on Ignore Tag Name: `"$($applicationConfiguration.IgnoreTag)`" with Id: $($applicationConfiguration.IgnoreTagId)"
-                $filteredMedia = $filteredMedia | Where-Object { $_.tags -notcontains $applicationConfiguration.IgnoreTagId }
+            # If "IgnoreTagId" is specified, filter media to exclude media with a matching tag
+            if ($applicationConfiguration.IgnoreTagId.Count) {
+
+                Write-Verbose "Filtering media based on Ignore Tag Name(s): $(
+        (0..($applicationConfiguration.IgnoreTag.Count - 1) |
+            ForEach-Object {
+                '{0} (id {1})' -f
+                    $applicationConfiguration.IgnoreTag[$_],
+                    $applicationConfiguration.IgnoreTagId[$_]
+            }) -join ', '
+    )"
+
+                $droppedMedia = $filteredMedia | Where-Object {
+                    $_.tags | Where-Object { $_ -in $applicationConfiguration.IgnoreTagId }
+                }
+
+                if ($droppedMedia) {
+                    $tagNameById = @{}
+                    for ($i = 0; $i -lt $applicationConfiguration.IgnoreTagId.Count; $i++) {
+                        $tagNameById[[string]$applicationConfiguration.IgnoreTagId[$i]] = $applicationConfiguration.IgnoreTag[$i]
+                    }
+
+                    Write-Verbose ("Dropped media due to ignored tags:`n" + (
+                            $droppedMedia | ForEach-Object {
+                                $hitIds = @($_.tags | Where-Object { $_ -in $applicationConfiguration.IgnoreTagId })
+                                $hitPretty = $hitIds | ForEach-Object {
+                                    $id = [string]$_
+                                    if ($tagNameById.ContainsKey($id)) { '{0} (id {1})' -f $tagNameById[$id], $id } else { "id $id" }
+                                }
+                                " - $($_.title): $($hitPretty -join ', ')"
+                            } | Out-String
+                        ))
+                }
+
+
+                $filteredMedia = $filteredMedia | Where-Object {
+                    -not ($_.tags | Where-Object { $_ -in $applicationConfiguration.IgnoreTagId })
+                }
             }
+
         }
     }
 
     end {
-        # Return the filtered media array
         $filteredMedia
     }
 }
@@ -1393,7 +1430,8 @@ function Send-DiscordMessage {
     end {
         if ($statusCode -match '2\d\d') {
             Write-Verbose 'Discord message sent successfully'
-        } else {
+        }
+        else {
             Write-Warning "There was an error sending the Discord message. Status code: $statusCode"
             $discordMessage
         }
@@ -1604,11 +1642,13 @@ function Send-NotifiarrPassThroughNotification {
 
                 if ($notifiarrResponse.result -eq 'success') {
                     Write-Verbose 'Notification successfully sent to Notifiarr'
-                } else {
+                }
+                else {
                     Write-Warning 'Failed to send notification to Notifiarr'
                     throw "Server responded with status code:`r`n$notifiarrResponse"
                 }
-            } catch {
+            }
+            catch {
                 Write-Warning 'Unexpected error occurred while sending notification to Notifiarr'
                 throw $_.Exception.Message
             }
@@ -1817,7 +1857,7 @@ foreach ($application in $applicationList) {
         $applicationConfiguration = @{
             ApiKey         = $configuration.$application.ApiKey
             Count          = $configuration.$application.Count
-            IgnoreTag      = if ([string]::IsNullOrWhiteSpace($configuration.$application.IgnoreTag)) { $null } else { $configuration.$application.IgnoreTag }
+            IgnoreTag      = if ([string]::IsNullOrWhiteSpace($configuration.$application.IgnoreTag)) { @() } else { $configuration.$application.IgnoreTag -split '\s*,\s*' }
             Monitored      = [System.Convert]::ToBoolean($configuration.$application.Monitored)
             Status         = switch -Regex ($application) {
                 'radarr' { if ([string]::IsNullOrWhiteSpace($configuration.$application.MovieStatus)) { $null } else { $configuration.$application.MovieStatus } }
@@ -1847,8 +1887,16 @@ foreach ($application in $applicationList) {
     # Retrieve the Tag Id to ignore based on the tag name
     if ($PSCmdlet.ShouldProcess($applicationName, 'Retrieving Tag ID to ignore')) {
         if (-Not [string]::IsNullOrWhiteSpace($applicationConfiguration.IgnoreTag)) {
-            $applicationConfiguration['IgnoreTagId'] = Get-StarrItemId -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -TagName $applicationConfiguration.IgnoreTag -Url $applicationConfiguration.Url
-
+            $applicationConfiguration['IgnoreTagId'] = @(
+                foreach ($tag in $applicationConfiguration.IgnoreTag) {
+                    Get-StarrItemId `
+                        -ApiKey $applicationConfiguration.ApiKey `
+                        -ApiVersion $applicationConfiguration.ApiVersion `
+                        -Application $applicationName `
+                        -TagName $tag `
+                        -Url $applicationConfiguration.Url
+                }
+            )
             if ($applicationConfiguration.TagId -eq $applicationConfiguration.IgnoreTagId) {
                 throw "Tag ID for `"$($applicationConfiguration.TagName)`" and `"$($applicationConfiguration.IgnoreTag)`" are the same, please correct this in the configuration file"
             }
@@ -1975,7 +2023,8 @@ foreach ($application in $applicationList) {
         if ($applicationConfiguration.Count -eq 'max') {
             Write-Verbose 'No count specified, returning all filtered media'
             $mediaToSearch = $filteredMedia
-        } else {
+        }
+        else {
             Write-Verbose "Filtering media based on count: $($applicationConfiguration.Count)"
             $mediaToSearch = Get-Random -InputObject $filteredMedia -Count $applicationConfiguration.Count
         }
@@ -1988,7 +2037,8 @@ foreach ($application in $applicationList) {
             foreach ($mediaItem in $mediaToSearch) {
                 Start-StarrMediaSearch -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Media $mediaItem -Url $applicationConfiguration.Url
             }
-        } else {
+        }
+        else {
             Start-StarrMediaSearch -ApiKey $applicationConfiguration.ApiKey -ApiVersion $applicationConfiguration.ApiVersion -Application $applicationName -Media $mediaToSearch -Url $applicationConfiguration.Url
         }
     }
@@ -2048,7 +2098,8 @@ foreach ($application in $applicationList) {
             if ($application -match 'lidarr') {
                 $descriptionField += "`r`n- $($mediaItem.artistName)"
                 $titleList.Add("`n- $($mediaItem.artistName)")
-            } elseif ($application -match 'readarr') {
+            }
+            elseif ($application -match 'readarr') {
                 $descriptionField += "`r`n- $($mediaItem.authorName)"
                 $titleList.Add("`n- $($mediaItem.authorName)")
             }
