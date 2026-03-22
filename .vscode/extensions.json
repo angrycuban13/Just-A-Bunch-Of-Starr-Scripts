@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "Gruntfuggly.todo-tree",
+        "ms-vscode.powershell",
+        "oderwat.indent-rainbow",
+        "TylerLeonhardt.vscode-inline-values-powershell",
+        "usernamehw.errorlens"
+    ]
+}

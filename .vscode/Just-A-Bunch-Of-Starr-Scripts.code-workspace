@@ -1,0 +1,39 @@
+{
+    "folders": [
+        {
+            "name": "Just-A-Bunch-Of-Starr-Scripts",
+            "path": "..\\."
+        }
+    ],
+    "settings": {
+        "[powershell]": {
+            "editor.detectIndentation": false,
+            "editor.formatOnSave": true,
+            "editor.renderWhitespace": "all",
+            "editor.rulers": [
+                120
+            ],
+            "editor.tabCompletion": "on",
+            "editor.wordWrap": "bounded",
+            "editor.wordWrapColumn": 110,
+            "files.autoGuessEncoding": true,
+            "files.encoding": "utf8bom"
+        },
+        "powershell.analyzeOpenDocumentsOnly": true,
+        "powershell.codeFormatting.autoCorrectAliases": true,
+        "powershell.codeFormatting.avoidSemicolonsAsLineTerminators": true,
+        "powershell.codeFormatting.newLineAfterOpenBrace": true,
+        "powershell.codeFormatting.openBraceOnSameLine": true,
+        "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
+        "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
+        "powershell.codeFormatting.useConstantStrings": true,
+        "powershell.codeFormatting.useCorrectCasing": true,
+        "powershell.codeFormatting.whitespaceBetweenParameters": true,
+        "powershell.integratedConsole.showOnStartup": false,
+        "powershell.integratedConsole.suppressStartupBanner": true,
+        "powershell.powerShellDefaultVersion": "PowerShell (x64)",
+        "powershell.promptToUpdatePowerShell": false,
+        "powershell.scriptAnalysis.enable": true,
+        "powershell.scriptAnalysis.settingsPath": ".vscode\\PSScriptAnalyzerSettings.psd1"
+    }
+}
