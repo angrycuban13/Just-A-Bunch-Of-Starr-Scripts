@@ -1,8 +1,0 @@
-site_name: Just A Bunch Of Starr Scripts
-site_url: https://starrscripts.xyz
-theme:
-  name: material
-nav:
-  - Home: index.md
-repo_url: https://github.com/angrycuban13/Just-A-Bunch-Of-Starr-Scripts
-repo_name: GitHub
