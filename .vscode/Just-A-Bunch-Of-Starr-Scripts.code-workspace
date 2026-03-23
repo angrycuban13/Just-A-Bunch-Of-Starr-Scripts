@@ -6,6 +6,14 @@
         }
     ],
     "settings": {
+        "[markdown]": {
+            "editor.codeActionsOnSave": {
+                "source.fixAll.markdownlint": "always"
+            },
+            "editor.defaultFormatter": "DavidAnson.vscode-markdownlint",
+            "editor.insertSpaces": true,
+            "files.trimTrailingWhitespace": false
+        },
         "[powershell]": {
             "editor.detectIndentation": false,
             "editor.formatOnSave": true,
@@ -18,6 +26,16 @@
             "editor.wordWrapColumn": 110,
             "files.autoGuessEncoding": true,
             "files.encoding": "utf8bom"
+        },
+        "markdownlint.config": {
+            "MD033": {
+                "allowed_elements": [
+                    "a",
+                    "picture",
+                    "source",
+                    "img"
+                ]
+            }
         },
         "powershell.analyzeOpenDocumentsOnly": true,
         "powershell.codeFormatting.autoCorrectAliases": true,

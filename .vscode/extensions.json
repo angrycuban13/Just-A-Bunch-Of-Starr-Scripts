@@ -1,5 +1,6 @@
 {
     "recommendations": [
+        "DavidAnson.vscode-markdownlint",
         "Gruntfuggly.todo-tree",
         "ms-vscode.powershell",
         "oderwat.indent-rainbow",
